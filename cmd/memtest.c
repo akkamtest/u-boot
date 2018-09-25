@@ -24,7 +24,7 @@ unsigned char verify_start_param(ulong start)
 
 unsigned char verify_end_param(ulong end)
 {
-	if ((end < MEMTEST_LOWEST_ADDR) || (end > MEMTEST_HIGHEST_ADDR))
+	if ((end < MEMTEST_LOWEST_ADDR) || ((end+8) > MEMTEST_HIGHEST_ADDR))
 	{
 		printf ("Error with End address\n");
 		return(1);
@@ -760,4 +760,94 @@ void wait (unsigned int sec)
 	}
 	printf("\n");
 	return;
+}
+
+
+unsigned char move_block64(ulong start, ulong end, unsigned char stop_after_err)
+{
+	ulong *p, *pe, length, mask = 0x8000000000000000;
+	ulong tab[16] =  {MEMTEST_PATTERN_MB_0,
+					MEMTEST_PATTERN_MB_1,
+					MEMTEST_PATTERN_MB_2,
+					MEMTEST_PATTERN_MB_3,
+					MEMTEST_PATTERN_MB_4,
+					MEMTEST_PATTERN_MB_5,
+					MEMTEST_PATTERN_MB_6,
+					MEMTEST_PATTERN_MB_7,
+					MEMTEST_PATTERN_MB_8,
+					MEMTEST_PATTERN_MB_9,
+					MEMTEST_PATTERN_MB_10,
+					MEMTEST_PATTERN_MB_11,
+					MEMTEST_PATTERN_MB_12,
+					MEMTEST_PATTERN_MB_13,
+					MEMTEST_PATTERN_MB_14,
+					MEMTEST_PATTERN_MB_15};
+	int i,test_num = 6;	
+
+	/* Test parameters */
+	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err))
+	{
+		return(1);
+	}
+	/* Disable cache */
+#ifdef CONFIG_CMD_CACHE	
+	icache_disable();
+	flush_dcache_all();
+	dcache_disable();
+#endif
+
+	/* length adjustement */
+	length = end - 1 - start;
+	length = length / sizeof(ulong); /* convertion to be used with address */
+	if (length < 31)	/* length should be at least 2 blocks */
+	{
+		printf ("Tested range is too small - it should be 256 Bytes at least\n");
+		return(0);
+	}
+	/* Initialise tested memory range */
+	p = (ulong*)start;
+	pe = p + length;
+	
+#ifdef DEBUG_MEMTEST
+	mtest_debug(test_num, (ulong)p, *p);
+#endif
+	/* Write each address with it's own address */	
+	for (i=0; p <= pe; p++) 
+	{		
+		*p = tab[i];
+		if ((tab[i] & mask) == mask)
+		{
+			tab[i]=(tab[i]<<1) + 1;
+		}
+		else
+		{
+			tab[i] = tab[i]<<1;
+		}
+		i++;
+		if (i >= 16)
+		{
+			i=0;
+		}
+#ifdef DEBUG_MEMTEST
+		mtest_debug(test_num, (ulong)p, *p);
+#endif
+	}
+
+	/* Each address should have its own address */
+	/*
+	p = (ulong *)start;
+	pe = (ulong *)end;
+	for (; p <= pe; p++) 
+	{		
+		if(*p != (ulong)p) 
+		{
+			error((ulong)p, (ulong)p, *p, test_num);
+			if (stop_after_err == 1)
+			{
+				return(1);	
+			}
+		}
+	}
+	*/
+	return(0);
 }

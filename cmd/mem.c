@@ -645,19 +645,20 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 	
 	if ((test_id & IS_MEMTEST_1) == IS_MEMTEST_1)
 	{
-		printf("addr_tst0: stop option = %lx, start = %08lx, end = %08lx\n", stop, start, end);
+		printf("addr_tst1 stop option = %lx, start = %08lx, end = %08lx\n", stop, start, end);
 		for (i = 1; i <= MEMTEST_ITERATION;i++)
 		{
-			printf("addr_tst0 iter = %d\n", i);
-			ret |= addr_tst1(start, end, stop);
+			printf("addr_tst1 iter = %d\n", i);
+			//ret |= addr_tst1(start, end, stop);
+			ret |= move_block64(start, end, stop);
 		}
 	}
 	if ((test_id & IS_MEMTEST_2) == IS_MEMTEST_2)
 	{
-		printf("addr_tst1: stop option = %lx, start = %08lx, end = %08lx\n", stop, start, end);
+		printf("addr_tst2: stop option = %lx, start = %08lx, end = %08lx\n", stop, start, end);
 		for (i = 1; i <= MEMTEST_ITERATION;i++)
 		{
-			printf("addr_tst1 iter = %d\n", i);
+			printf("addr_tst2 iter = %d\n", i);
 			ret |= addr_tst2(start, end, stop);
 		}
 	}
@@ -997,7 +998,22 @@ U_BOOT_CMD(
 U_BOOT_CMD(
 	mtest,	5,	1,	do_mem_mtest,
 	"TEST RAM",
-	"[test [stop [start [end]]]"
+	"[test [stop [start [end]]]]\n"
+	"[test] list:\n"
+	" 0 : All test\n"
+	" 1 : addr_tst1\n"
+	" 2 : addr_tst2\n"
+	" 3 : movinv\n"
+	" 4 : movinv_8bit\n"
+	" 5 : movinvr\n"
+	" 6 : move_block64\n"
+	" 7 : movinv64\n"
+	" 8 : rand_seq\n"
+	" 9 : modtst\n"
+	" A : bit_fade\n"
+	" [Stop]: stop running when encouter an error\n"
+	" [Start]: start address (hex)\n"
+	" [End]: End address (hex)\n"
 );
 #endif	/* CONFIG_CMD_MEMTEST */
 

@@ -15,6 +15,22 @@
 #define MEMTEST_PATTERN_64_A	0xCAFEDECADECACAFE
 #define MEMTEST_PATTERN_64_B	0xA5A5A5A5A5A5A5A5
 #define MEMTEST_PATTERN_64_C	0x5A5A5A5A5A5A5A5A
+#define MEMTEST_PATTERN_MB_0	0x0000000100000001
+#define MEMTEST_PATTERN_MB_1	0x0000000100000001
+#define MEMTEST_PATTERN_MB_2	0x0000000100000001
+#define MEMTEST_PATTERN_MB_3	0x0000000100000001
+#define MEMTEST_PATTERN_MB_4	0xfffffffefffffffe
+#define MEMTEST_PATTERN_MB_5	0xfffffffefffffffe
+#define MEMTEST_PATTERN_MB_6	0x0000000100000001
+#define MEMTEST_PATTERN_MB_7	0x0000000100000001
+#define MEMTEST_PATTERN_MB_8	0x0000000100000001
+#define MEMTEST_PATTERN_MB_9	0x0000000100000001
+#define MEMTEST_PATTERN_MB_10	0xfffffffefffffffe
+#define MEMTEST_PATTERN_MB_11	0xfffffffefffffffe
+#define MEMTEST_PATTERN_MB_12	0x0000000100000001
+#define MEMTEST_PATTERN_MB_13	0x0000000100000001
+#define MEMTEST_PATTERN_MB_14	0xfffffffefffffffe
+#define MEMTEST_PATTERN_MB_15	0xfffffffefffffffe
 #define IS_MEMTEST_1		 	0x0001
 #define IS_MEMTEST_2		 	0x0002
 #define IS_MEMTEST_3		 	0x0004
@@ -40,6 +56,7 @@ unsigned char addr_tst2(ulong start, ulong end, char stop_after_err);
 unsigned char movinv (int iter, ulong start, ulong end, unsigned char stop_after_err);
 unsigned char movinv_8bit (int iter, ulong start, ulong end, ulong stop_after_err);
 unsigned char movinvr (int iter, ulong start, ulong end, unsigned char stop_after_err);
+unsigned char move_block64(ulong start, ulong end, unsigned char stop_after_err);
 unsigned char movinv64(ulong start, ulong end, unsigned char stop_after_err);
 unsigned char rand_seq(unsigned char iter_rand, ulong start, ulong end, unsigned char stop_after_err);
 unsigned char modtst(int offset, int iter, ulong p1, ulong p2, ulong start, ulong end, unsigned char stop_after_err);
