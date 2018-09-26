@@ -571,6 +571,7 @@ static int do_mem_loopw(cmd_tbl_t *cmdtp, int flag, int argc,
 }
 #endif /* CONFIG_LOOPW */
 
+
 #ifdef CONFIG_CMD_MEMTEST
 
 /*
@@ -584,7 +585,7 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 	//unsigned long long int start, end, debug_var;
 	ulong start = 0, end = 0, stop = 0;
 	
-	ulong *buf;
+	vu_long *buf;
 	int i = 0, ret = 0;
 	//ulong errs = 0;	/* number of errors, or -1 if interrupted */
 	unsigned long test = 0, test_id = 0;
@@ -642,6 +643,12 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 	{
 		test_id = 0x0001 << (test - 1);
 	}
+		/* Disable cache */
+#ifdef CONFIG_CMD_CACHE	
+	icache_disable();
+	flush_dcache_all();
+	dcache_disable();
+#endif
 	
 	if ((test_id & IS_MEMTEST_1) == IS_MEMTEST_1)
 	{
@@ -649,8 +656,7 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 		for (i = 1; i <= MEMTEST_ITERATION;i++)
 		{
 			printf("addr_tst1 iter = %d\n", i);
-			//ret |= addr_tst1(start, end, stop);
-			ret |= move_block64(start, end, stop);
+			ret |= addr_tst1(start, end, stop);
 		}
 	}
 	if ((test_id & IS_MEMTEST_2) == IS_MEMTEST_2)
@@ -676,6 +682,15 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 	{
 		printf("movinvr: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %d\n", stop, start, end, MEMTEST_ITERATION);
 		ret |= movinvr (MEMTEST_ITERATION, start, end, stop);
+	}
+	if ((test_id & IS_MEMTEST_6) == IS_MEMTEST_6)
+	{
+		printf("move_block stop option = %lx, start = %08lx, end = %08lx\n", stop, start, end);
+		for (i = 1; i <= MEMTEST_ITERATION;i++)
+		{
+			printf("move_block iter = %d\n", i);
+			ret |= move_block(start, end, stop);
+		}
 	}
 	if ((test_id & IS_MEMTEST_7) == IS_MEMTEST_7)
 	{
@@ -1006,7 +1021,7 @@ U_BOOT_CMD(
 	" 3 : movinv\n"
 	" 4 : movinv_8bit\n"
 	" 5 : movinvr\n"
-	" 6 : move_block64\n"
+	" 6 : move_block\n"
 	" 7 : movinv64\n"
 	" 8 : rand_seq\n"
 	" 9 : modtst\n"

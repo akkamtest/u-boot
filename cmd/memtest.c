@@ -5,7 +5,7 @@
 #include "memtest.h"
 
 // Uncomment for debug
-#define DEBUG_MEMTEST 1
+//#define DEBUG_MEMTEST 1
 
 static unsigned long long int SEED_A;
 static unsigned long long int SEED_B;
@@ -763,10 +763,10 @@ void wait (unsigned int sec)
 }
 
 
-unsigned char move_block64(ulong start, ulong end, unsigned char stop_after_err)
+unsigned char move_block(ulong start, ulong end, unsigned char stop_after_err)
 {
-	ulong *p, *pe, length, mask = 0x8000000000000000;
-	ulong tab[16] =  {MEMTEST_PATTERN_MB_0,
+	ulong length, mask = 0x80000000, i;
+	uint tab[16] =  {MEMTEST_PATTERN_MB_0,
 					MEMTEST_PATTERN_MB_1,
 					MEMTEST_PATTERN_MB_2,
 					MEMTEST_PATTERN_MB_3,
@@ -782,72 +782,81 @@ unsigned char move_block64(ulong start, ulong end, unsigned char stop_after_err)
 					MEMTEST_PATTERN_MB_13,
 					MEMTEST_PATTERN_MB_14,
 					MEMTEST_PATTERN_MB_15};
-	int i,test_num = 6;	
+	uint j,test_num = 6;	
+	uint *p1, *p2;
 
 	/* Test parameters */
 	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err))
 	{
 		return(1);
 	}
-	/* Disable cache */
-#ifdef CONFIG_CMD_CACHE	
-	icache_disable();
-	flush_dcache_all();
-	dcache_disable();
-#endif
-
 	/* length adjustement */
-	length = end - 1 - start;
-	length = length / sizeof(ulong); /* convertion to be used with address */
-	if (length < 31)	/* length should be at least 2 blocks */
+	length = end - start;
+	if (length < 128)	/* length should be at least 2 blocks of 64 Bytes */
 	{
-		printf ("Tested range is too small - it should be 256 Bytes at least\n");
+		printf ("Tested range is too small - it should be 128 Bytes at least\n");
 		return(0);
 	}
-	/* Initialise tested memory range */
-	p = (ulong*)start;
-	pe = p + length;
-	
-#ifdef DEBUG_MEMTEST
-	mtest_debug(test_num, (ulong)p, *p);
-#endif
-	/* Write each address with it's own address */	
-	for (i=0; p <= pe; p++) 
-	{		
-		*p = tab[i];
-		if ((tab[i] & mask) == mask)
-		{
-			tab[i]=(tab[i]<<1) + 1;
-		}
-		else
-		{
-			tab[i] = tab[i]<<1;
-		}
-		i++;
-		if (i >= 16)
-		{
-			i=0;
-		}
-#ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
-#endif
+	if (length % 128)	/* length should be a multiple of 2 blocks of 64 Bytes */
+	{
+		printf ("Tested range is not a multiple of 128 Bytes\n");
+		return(0);
 	}
 
-	/* Each address should have its own address */
-	/*
-	p = (ulong *)start;
-	pe = (ulong *)end;
-	for (; p <= pe; p++) 
-	{		
-		if(*p != (ulong)p) 
+	/* Write each address with it's own address */	
+	for (i=start; i < end; i+=64)
+	{	
+		memcpy((void*) i, (void*)tab, 64);	
+		for (j=0; j<16; j++)
 		{
-			error((ulong)p, (ulong)p, *p, test_num);
-			if (stop_after_err == 1)
+			/* rotate left with carry */
+			if ((tab[j] & mask) == mask)
 			{
-				return(1);	
+				tab[j]=(tab[j]<<1) + 1;
+			}
+			else
+			{
+				tab[j] = tab[j]<<1;
 			}
 		}
 	}
+	/*
+		At the end of all this 
+		- the second half equals the inital value of the first half
+		- the first half is right shifted 32-bytes (with wrapping)
 	*/
+
+	/* Move first half to second half*/
+	memcpy((void*) (start + length/2), (void*) start, length/2);
+	/* Move the second half, less the last 32-bytes. To the first half, offset plus 32-bytes*/
+	memcpy((void*) (start + 32), (void*) (start + length/2), length/2 - 32);
+	/* Move last 8 DWORDS (32-bytes) of the second half to the start of the first half */
+	memcpy((void*) (start), (void*) (end - 32), 32);
+#ifdef DEBUG_MEMTEST
+	for (i=start; i < end; i+=4)
+	{	
+		p1 =(uint*)i;
+		printf ("addr p1: %08lx, value p1: %08x\n",i, *p1); 
+	}
+#endif	
+
+	for (i=start; i < end; i+=8)
+	{	
+		p1 =(uint*)i;
+		p2 = (uint*)(i+4);
+		
+#ifdef DEBUG_MEMTEST
+		printf ("addr p1: %08lx, value p1: %08x, addr p2: %08lx, value p2: %08x\n",i, *p1, i+4, *p2); 
+#endif		
+		if (*p1!=*p2)
+		{
+			error((ulong)p1, *p1, *p2, test_num);
+		}
+		if (stop_after_err == 1)
+		{
+			return(1);	
+		}
+	}
+
 	return(0);
 }
