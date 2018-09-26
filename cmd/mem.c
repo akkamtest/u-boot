@@ -713,7 +713,7 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 	if ((test_id & IS_MEMTEST_9) == IS_MEMTEST_9)
 	{
 		printf("modtst: stop option = %lx, start = %08lx, end = %08lx\n", stop, start, end);
-		for (i = 1; i <= MOD_SZ;i++)			
+		for (i = 1; i <= MEMTEST_ITERATION;i++)			
 		{
 			printf("modtst offset = %d\n", i);
 			ret |= modtst(i-1, MEMTEST_ITERATION, MEMTEST_PATTERN_64_B, MEMTEST_PATTERN_64_C, start, end, stop);
@@ -739,6 +739,11 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 			ret |= bit_fade_chk(MEMTEST_PATTERN_64_C, start, end, stop);
 		}
 	}
+			/* Disable cache */
+#ifdef CONFIG_CMD_CACHE	
+	icache_enable();
+	dcache_enable();
+#endif
 	return ret;
 }
 #endif	/* CONFIG_CMD_MEMTEST */
