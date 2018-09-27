@@ -12,7 +12,7 @@
 #define MEMTEST_ITERATION  		2
 #define MEMTEST_RAND_SEED_1		5
 #define MEMTEST_RAND_SEED_2		17
-#define MEMTEST_PATTERN_64_A	0xCAFEDECADECACAFE
+#define MEMTEST_PATTERN_64_A	0xB607C9D1A4E85F23
 #define MEMTEST_PATTERN_64_B	0xA5A5A5A5A5A5A5A5
 #define MEMTEST_PATTERN_64_C	0x5A5A5A5A5A5A5A5A
 #define MEMTEST_PATTERN_MB_0	0x00000001
@@ -50,7 +50,7 @@ unsigned char verify_stop_param(ulong stop);
 unsigned long long int rand1 (unsigned char salt);
 void reset_seed(void);
 void error(ulong adr, ulong good, ulong bad, int test_num);
-void mtest_debug(int test_num, ulong adr, ulong value);
+void mtest_debug(uint test_num, uint balise, ulong adr, ulong value);
 unsigned char addr_tst1(ulong start, ulong end, unsigned char stop_after_err);
 unsigned char addr_tst2(ulong start, ulong end, char stop_after_err);
 unsigned char movinv (int iter, ulong start, ulong end, unsigned char stop_after_err);

@@ -93,9 +93,9 @@ void error(ulong adr, ulong good, ulong bad, int test_num)
 
 #ifdef DEBUG_MEMTEST
 	/*  Allows to visualize which test return the error, the faulty address and the difference between the expected value and the one read */
-	void mtest_debug(int test_num, ulong adr, ulong value)
+	void mtest_debug(uint test_num, uint balise, ulong adr, ulong value)
 {
-	printf ("TEST number: %d, Address: %08lx, Value: %08lx\n", test_num, adr, value);
+	printf ("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, balise, adr, value);
 	/*printf ("	> Address: %08lx\n", adr);
 	printf ("	> Value  : %08lx\n", value);	*/
 }
@@ -124,14 +124,13 @@ unsigned char addr_tst1(ulong start, ulong end, unsigned char stop_after_err)
 	/* test each bit for all address */
 	for (; p < pe; p++) 
 	{
-		//mtest_debug(test_num, (unsigned long long int)p, *p);
 		for (i = 0; i<8; i++) 
 		{
 			mask = 1<<i;
 			*p &= mask;
 			*p |= mask;
 #ifdef DEBUG_MEMTEST
-			mtest_debug(test_num, (ulong)p, *p);
+			mtest_debug(test_num, 0, (ulong)p, *p);
 #endif
 			if(*p != mask) 
 			{
@@ -152,7 +151,7 @@ unsigned char addr_tst2(ulong start, ulong end, char stop_after_err)
 	int test_num = 2;	
 
 	/* Test parameters */
-	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err))
+	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err)||verify_length(start, end, 8))
 	{
 		return(1);
 	}
@@ -166,7 +165,7 @@ unsigned char addr_tst2(ulong start, ulong end, char stop_after_err)
 	{		
 		*p = (ulong)p;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, 0, (ulong)p, *p);
 #endif
 	}
 
@@ -208,7 +207,7 @@ unsigned char movinv (int iter, ulong start, ulong end, unsigned char stop_after
 	{
 		*p = p1;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, 0, (ulong)p, *p);
 #endif
 	}
 	
@@ -231,7 +230,7 @@ unsigned char movinv (int iter, ulong start, ulong end, unsigned char stop_after
 			}
 			*p = ~p1;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, i+1, (ulong)p, *p);
 #endif
 		}
 		
@@ -276,7 +275,7 @@ unsigned char movinv_8bit (int iter, ulong start, ulong end, ulong stop_after_er
 	{
 		*p = p1;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, 0, (ulong)p, *p);
 #endif
 	}
 	
@@ -300,7 +299,7 @@ unsigned char movinv_8bit (int iter, ulong start, ulong end, ulong stop_after_er
 			}
 			*p = p2;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, i+1, (ulong)p, *p);
 #endif
 		}
 		p = (unsigned char*)(end-sizeof(unsigned char));
@@ -344,11 +343,11 @@ unsigned char movinvr (int iter, ulong start, ulong end, unsigned char stop_afte
 	pe = (ulong*)end;
 	
 	/* Initialize memory with the initial pattern */
-	for (; p <= pe; p++) 
+	for (; p < pe; p++) 
 	{
 		*p = p1;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, 0,(ulong)p, *p);
 #endif	
 	}
 
@@ -360,7 +359,7 @@ unsigned char movinvr (int iter, ulong start, ulong end, unsigned char stop_afte
 		p = (ulong*)start;
 		pe = (ulong*)end;
 
-		for (; p <= pe; p++) 
+		for (; p < pe; p++) 
 		{
 			if (*p != p1) 
 			{
@@ -372,12 +371,11 @@ unsigned char movinvr (int iter, ulong start, ulong end, unsigned char stop_afte
 			}
 			*p = ~p1;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, i+1,(ulong)p, *p);
 #endif
 		}
-
 		pe = (ulong*)start;
-		p = (ulong*)end;
+		p = (ulong*)(end-sizeof(ulong));
 		do 
 		{
 			if (*p != ~p1) 
@@ -389,9 +387,9 @@ unsigned char movinvr (int iter, ulong start, ulong end, unsigned char stop_afte
 				}
 			}
 			*p = p1;
-#ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
-#endif
+	#ifdef DEBUG_MEMTEST
+			mtest_debug(test_num, iter+i+1,(ulong)p, *p);
+	#endif
 		} while (--p >= pe);
 	}
 	return(0);
@@ -407,7 +405,7 @@ unsigned char movinv64(ulong start, ulong end, unsigned char stop_after_err)
 	unsigned char tab_compl = 0;
 	
 	/* Test parameters */
-	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err))
+	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err)||verify_length(start, end, 8))
 	{
 		return(1);
 	}
@@ -419,11 +417,11 @@ unsigned char movinv64(ulong start, ulong end, unsigned char stop_after_err)
 	/* Initialize memory with the initial pattern.  */
 	k = 0;
 	pat = p1;	
-	while (p <= pe)
+	while (p < pe)
 	{
 		*p = pat;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, 0,(ulong)p, *p);
 #endif		
 		if (tab_compl == 0)
 		{
@@ -465,14 +463,14 @@ unsigned char movinv64(ulong start, ulong end, unsigned char stop_after_err)
 		comp_pat = ~pat;
 		*p = comp_pat;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, 1,(ulong)p, *p);
 #endif
+		
+		p++;
 		if (p >= pe)
 		{
 			break;
 		}
-		p++;
-
 		if (++k >= 64)
 		{
 			k = 0;
@@ -481,7 +479,7 @@ unsigned char movinv64(ulong start, ulong end, unsigned char stop_after_err)
 	}
 
 	pe = (ulong*)start;
-	p = (ulong*)end;
+	p = (ulong*)(end-sizeof(ulong));
 	while (1)
 	{		
 		pat = tab[k];
@@ -495,6 +493,9 @@ unsigned char movinv64(ulong start, ulong end, unsigned char stop_after_err)
 			}
 		}
 		*p = pat;
+#ifdef DEBUG_MEMTEST
+		mtest_debug(test_num, 2,(ulong)p, *p);
+#endif
 		if (p <= pe)
 		{
 			break;
@@ -516,21 +517,20 @@ unsigned char rand_seq(unsigned char iter_rand, ulong start, ulong end, unsigned
 	int test_num = 8;
 	
 	/* Test parameters */
-	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err))
+	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err)||verify_length(start, end, 8))
 	{
 		return(1);
 	}
-	
 	reset_seed();	
 	/* Initialise tested memory range */
 	p = (ulong*)start;
 	pe = (ulong*)end;
 	
-	for (; p <= pe; p++) 
+	for (; p < pe; p++) 
 	{
 		*p = rand1(iter_rand);
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, 0, (ulong)p, *p);
 #endif	
 	}
 
@@ -543,7 +543,7 @@ unsigned char rand_seq(unsigned char iter_rand, ulong start, ulong end, unsigned
 		p = (ulong*)start;
 		pe = (ulong*)end;
 	
-		for (; p <= pe; p++)
+		for (; p < pe; p++)
 		{			
 			num = rand1(iter_rand);
 			if (i)
@@ -560,7 +560,7 @@ unsigned char rand_seq(unsigned char iter_rand, ulong start, ulong end, unsigned
 			}
 			*p = ~num;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, i+1, (ulong)p, *p);
 #endif	
 		}
 	}
@@ -570,39 +570,34 @@ unsigned char rand_seq(unsigned char iter_rand, ulong start, ulong end, unsigned
 
 unsigned char modtst(int offset, int iter, ulong p1, ulong p2, ulong start, ulong end, unsigned char stop_after_err)
 {
-	int k, l;
+	int k, i;
 	int test_num = 9;
 	ulong *p;
 	ulong *pe;
-	end -= MOD_SZ * 8;	/* adjust the ending address */
-	
+	//end -= MOD_SZ * 8;	/* adjust the ending address */
 	/* Test parameters */
-	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err))
+	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err)||verify_length(start, end, 8))
 	{
 		return(1);
 	}
 	
 	/* Initialise tested memory range */
-	p = (ulong*)start + offset;
-	pe = (ulong*)end;
+	p = (ulong*)start + offset;	
+	pe = (ulong*)(end-MOD_SZ);/* adjust the ending address */
 	
-	for (; p <= pe; p += MOD_SZ)
+	for (; p < pe; p += MOD_SZ)
 	{
 		*p = p1;		
-#ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
-#endif	
 	} 
 
 	/* Write the rest of memory "iter" times with the pattern complement */
-	for (l=0; l<iter; l++) 
+	for (i=0; i<iter; i++) 
 	{
 		//calculate_chunk(&start, &end);
 		p = (ulong*)start;
 		pe = (ulong*)end;
 		k = 0;
-
-		for (; p <= pe; p++) 
+		for (; p < pe; p++) 
 		{
 			if (k != offset)
 			{
@@ -612,16 +607,22 @@ unsigned char modtst(int offset, int iter, ulong p1, ulong p2, ulong start, ulon
 			{
 				k = 0;
 			}
-#ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
-#endif	
 		}
 	}
 	
-	p = (ulong*)start + offset;
+#ifdef DEBUG_MEMTEST
+	p = (ulong*)start;	
 	pe = (ulong*)end;
-	end -= MOD_SZ*8;	/* adjust the ending address */
-	for (; p <= pe; p += MOD_SZ) 
+	for (; p < pe; p++) 
+	{	
+		mtest_debug(test_num, 0, (ulong)p, *p);
+	}
+#endif		
+	
+	p = (ulong*)start + offset;
+	//end -= MOD_SZ*8;	/* adjust the ending address */
+	pe = (ulong*)(end-MOD_SZ * 8);
+	for (; p < pe; p += MOD_SZ) 
 	{
 		if (*p != p1) 
 		{
@@ -642,7 +643,7 @@ unsigned char bit_fade_fill(ulong p1, ulong start, ulong end, unsigned char stop
 	int test_num = 10;
 #endif	
 	/* Test parameters */
-	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err))
+	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err)||verify_length(start, end, 8))
 	{
 		return(1);
 	}
@@ -652,11 +653,11 @@ unsigned char bit_fade_fill(ulong p1, ulong start, ulong end, unsigned char stop
 	pe = (ulong*)end;
 	
 	/* Initialize memory with the initial pattern. */		
-	for (; p <= pe;p++)
+	for (;p < pe ;p++)
 	{
 		*p = p1;
 #ifdef DEBUG_MEMTEST
-		mtest_debug(test_num, (ulong)p, *p);
+		mtest_debug(test_num, 0, (ulong)p, *p);
 #endif	
 	}
 	return(0);
@@ -668,7 +669,7 @@ unsigned char bit_fade_chk(ulong p1, ulong start, ulong end, unsigned char stop_
 	int test_num = 10;
 	
 	/* Test parameters */
-	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err))
+	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err)||verify_length(start, end, 8))
 	{
 		return(1);
 	}
@@ -678,7 +679,7 @@ unsigned char bit_fade_chk(ulong p1, ulong start, ulong end, unsigned char stop_
 	pe = (ulong *)end;
 
 	/* Make sure that nothing changed while sleeping */
-	for (; p <= pe;p++)
+	for (;p < pe ;p++)
 	{
 		if ((bad=*p) != p1)
 		{
@@ -728,7 +729,7 @@ unsigned char move_block(ulong start, ulong end, unsigned char stop_after_err)
 	uint *p1, *p2;
 
 	/* Test parameters */
-	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err))
+	if (verify_start_param(start)||verify_end_param(end)||verify_stop_param(stop_after_err)||verify_length(start, end, 128)) /* length should be a multiple of 2 blocks of 64 Bytes */
 	{
 		return(1);
 	}
@@ -739,12 +740,13 @@ unsigned char move_block(ulong start, ulong end, unsigned char stop_after_err)
 		printf ("Tested range is too small - it should be 128 Bytes at least\n");
 		return(0);
 	}
-	if (length % 128)	/* length should be a multiple of 2 blocks of 64 Bytes */
+	/*
+	if (length % 128)	
 	{
 		printf ("Tested range is not a multiple of 128 Bytes\n");
 		return(0);
 	}
-
+	*/
 	/* Write each address with it's own address */	
 	for (i=start; i < end; i+=64)
 	{	
@@ -778,7 +780,8 @@ unsigned char move_block(ulong start, ulong end, unsigned char stop_after_err)
 	for (i=start; i < end; i+=4)
 	{	
 		p1 =(uint*)i;
-		printf ("addr p1: %08lx, value p1: %08x\n",i, *p1); 
+		mtest_debug(test_num, 0, (ulong)p1, *p1);
+		//printf ("addr p1: %08lx, value p1: %08x\n",i, *p1); 
 	}
 #endif	
 
@@ -788,7 +791,9 @@ unsigned char move_block(ulong start, ulong end, unsigned char stop_after_err)
 		p2 = (uint*)(i+4);
 		
 #ifdef DEBUG_MEMTEST
-		printf ("addr p1: %08lx, value p1: %08x, addr p2: %08lx, value p2: %08x\n",i, *p1, i+4, *p2); 
+		//printf ("addr p1: %08lx, value p1: %08x, addr p2: %08lx, value p2: %08x\n",i, *p1, i+4, *p2); 
+		mtest_debug(test_num, 1, (ulong)p1, *p1);
+		mtest_debug(test_num, 2, (ulong)p2, *p2);
 #endif		
 		if (*p1!=*p2)
 		{
