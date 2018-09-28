@@ -5,11 +5,18 @@
 //typedef unsigned long ulong;
 
 
-#define MEMTEST_LOWEST_ADDR		0x0000000000000000
+#ifndef CONFIG_SYS_MEMTEST_START
+//#define	CONFIG_SYS_MEMTEST_START	0x00800000
+//#define	CONFIG_SYS_MEMTEST_END		0x3B9AC9F8
+#define	CONFIG_SYS_MEMTEST_START	0xBEF70000
+#define	CONFIG_SYS_MEMTEST_END		0xBEF80000
+#endif /* CONFIG_SYS_MEMTEST_START */
+
+#define MEMTEST_LOWEST_ADDR			0x0000000000000000
 #define MEMTEST_HIGHEST_ADDR	0xFFFFFFFFFFFFFFF8
-#define MOD_SZ			   		20
+#define MOD_SZ					20
 #define MEMTEST_MOD_OFFSET 		0
-#define MEMTEST_ITERATION  		2
+#define MEMTEST_ITERATION  		10
 #define MEMTEST_RAND_SEED_1		5
 #define MEMTEST_RAND_SEED_2		17
 #define MEMTEST_PATTERN_64_A	0xB607C9D1A4E85F23
@@ -44,23 +51,23 @@
 
 
 
-unsigned char verify_start_param(ulong start);
-unsigned char verify_end_param(ulong end);
-unsigned char verify_stop_param(ulong stop);
+unsigned char verify_start_param(vu_long start);
+unsigned char verify_end_param(vu_long end);
+unsigned char verify_stop_param(vu_long stop);
 unsigned long long int rand1 (unsigned char salt);
 void reset_seed(void);
-void error(ulong adr, ulong good, ulong bad, int test_num);
-void mtest_debug(uint test_num, uint balise, ulong adr, ulong value);
-unsigned char addr_tst1(ulong start, ulong end, unsigned char stop_after_err);
-unsigned char addr_tst2(ulong start, ulong end, char stop_after_err);
-unsigned char movinv (int iter, ulong start, ulong end, unsigned char stop_after_err);
-unsigned char movinv_8bit (int iter, ulong start, ulong end, ulong stop_after_err);
-unsigned char movinvr (int iter, ulong start, ulong end, unsigned char stop_after_err);
-unsigned char move_block(ulong start, ulong end, unsigned char stop_after_err);
-unsigned char movinv64(ulong start, ulong end, unsigned char stop_after_err);
-unsigned char rand_seq(unsigned char iter_rand, ulong start, ulong end, unsigned char stop_after_err);
-unsigned char modtst(int offset, int iter, ulong p1, ulong p2, ulong start, ulong end, unsigned char stop_after_err);
-unsigned char bit_fade_fill(ulong p1, ulong start, ulong end, unsigned char stop_after_err);
-unsigned char bit_fade_chk(ulong p1, ulong start, ulong end, unsigned char stop_after_err);
+void error(vu_long adr, vu_long good, vu_long bad, int test_num);
+void mtest_debug(uint test_num, uint balise, vu_long adr, vu_long value);
+unsigned char addr_tst1(vu_long start, vu_long end, unsigned char stop_after_err);
+unsigned char addr_tst2(vu_long start, vu_long end, char stop_after_err);
+unsigned char movinv (int iter, vu_long start, vu_long end, unsigned char stop_after_err);
+unsigned char movinv_8bit (int iter, vu_long start, vu_long end, vu_long stop_after_err);
+unsigned char movinvr (int iter, vu_long start, vu_long end, unsigned char stop_after_err);
+unsigned char move_block(vu_long start, vu_long end, unsigned char stop_after_err);
+unsigned char movinv64(vu_long start, vu_long end, unsigned char stop_after_err);
+unsigned char rand_seq(unsigned char iter_rand, vu_long start, vu_long end, unsigned char stop_after_err);
+unsigned char modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start, vu_long end, unsigned char stop_after_err);
+unsigned char bit_fade_fill(vu_long p1, vu_long start, vu_long end, unsigned char stop_after_err);
+unsigned char bit_fade_chk(vu_long p1, vu_long start, vu_long end, unsigned char stop_after_err);
 void wait (unsigned int sec);
 #endif /* _TEST_H_ */
