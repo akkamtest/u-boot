@@ -583,7 +583,7 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 			char * const argv[])
 {
 	/* start and end of memory area to be tested */ 
-	ulong length, start = 0, end = 0; 
+	ulong length, start = 0, end = 0, pattern1; 
 	vu_long *buf;
 	/* stop indicateur */ 
 	ulong stop = 0;
@@ -601,7 +601,6 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 	start = CONFIG_SYS_MEMTEST_START;
 	end = CONFIG_SYS_MEMTEST_END;
 
-	
 	/* set the default iteration number */ 
 	ulNbIteration = 1; 
 	
@@ -610,18 +609,24 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 		if (strict_strtoul(argv[1], 16, &test) < 0) {
 			printf ("'Error parsing [test] argument (test id)\n");
 			return CMD_RET_USAGE;
-		} else if ((test < 0x0)||(test > 0xa)) {
-				printf("Invalid test id\n");
-				return CMD_RET_USAGE;
+		}
+		else if ((test < 0x0)||(test > 0xa)) {
+			printf("Invalid test id\n");
+			return CMD_RET_USAGE;
 		}
 	}
 	
 	/* stop indicateur, if 1 stop at the first test error */ 
-	if (argc > 2) 
+	if (argc > 2) {
 		if (strict_strtoul(argv[2], 16, &stop) < 0)	{
 			printf ("'Error parsing [stop] argument (0 or other value)\n");
 			return CMD_RET_USAGE;
 		}
+		else if ((stop != 0)&&(stop!= 1)) {
+			printf ("'Invalid [stop] argument, should be 0 or 1\n");
+			return CMD_RET_USAGE;
+		}
+	}
 		
 	/* start address of the memory area to be tested */ 
 	if (argc > 3)
@@ -633,22 +638,24 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 	/* end address of the memory area to be tested */
 	if (argc > 4) {
 		if (strict_strtoul(argv[4], 16, &end) < 0) {
-			printf ("Error parsing end adress =%08lx \n", end);
+			printf ("'Error parsing end adress =%08lx \n", end);
 			return CMD_RET_USAGE;
-		} else if (end <= start) {
+		}
+		else if (end <= start) {
 			printf("Inavlid memory area (null or less than 0)\n");
 			return CMD_RET_USAGE;
 		}
 	}
-	/* Number of iterations for each test */
+	/* Verify start and end address parameters */
 	if ((start < CONFIG_SYS_MEMTEST_START)||(end > CONFIG_SYS_MEMTEST_END)) {
-		printf ("Error : start address min =%08lx, end address max =%08lx\n", (ulong)CONFIG_SYS_MEMTEST_START, (ulong)CONFIG_SYS_MEMTEST_END);
+		printf ("'Error : start address min =%08lx, end address max =%08lx\n", (ulong)CONFIG_SYS_MEMTEST_START, (ulong)CONFIG_SYS_MEMTEST_END);
+		return CMD_RET_USAGE;
 	}
 	
 	/* Number of iterations for each test */ 
 	if (argc > 5)
 		if (strict_strtoul(argv[5], 16, &ulNbIteration) < 0) {
-			printf ("Error parsing number of iteration =%08lx \n", ulNbIteration);
+			printf ("'Error parsing number of iteration =%08lx \n", ulNbIteration);
 			return CMD_RET_USAGE;
 		}
 		
@@ -735,7 +742,9 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 	if (((test_id & IS_MEMTEST_9) == IS_MEMTEST_9) && (!(ret&&stop))) {
 		printf("modtst: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %08lx\n", stop, start, end, ulNbIteration);
 		for (i = 1; (i <= ulNbIteration) && (!(ret&&stop));i++) {
-			ret |= modtst(MEMTEST_MOD_OFFSET, MEMTEST_ITERATION, MEMTEST_LOWEST_ADDR, MEMTEST_HIGHEST_ADDR, start, end, stop);
+			reset_seed();
+			pattern1 = rand1(i);
+			ret |= modtst(MEMTEST_MOD_OFFSET, MEMTEST_ITERATION, pattern1, ~pattern1, start, end, stop);
 			WATCHDOG_RESET();
 		}
 	}
@@ -743,12 +752,20 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 	if (((test_id & IS_MEMTEST_10) == IS_MEMTEST_10) && (!(ret&&stop)))	{
 		printf("bit_fade: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %08lx\n", stop, start, end, ulNbIteration);
 		for (i = 1; (i <= ulNbIteration) && (!(ret&&stop));i++)	{
-			if (!bit_fade_fill(MEMTEST_PATTERN_64_B, start, end, stop))	wait(2);
-			ret |= bit_fade_chk(MEMTEST_PATTERN_64_B, start, end, stop);
-			
-			if (!bit_fade_fill(MEMTEST_PATTERN_64_C, start, end, stop))	wait(2);
-			ret |= bit_fade_chk(MEMTEST_PATTERN_64_C, start, end, stop);
-			WATCHDOG_RESET();
+			reset_seed();
+			pattern1 = rand1(i);
+			ret|=bit_fade_fill(pattern1, start, end, stop);
+			if (!(ret&&stop)) {
+				wait(2);
+				ret |= bit_fade_chk(pattern1, start, end, stop);
+				WATCHDOG_RESET();
+			}
+			ret|=bit_fade_fill(pattern1, start, end, stop);
+			if (!(ret&&stop)) {
+				wait(2);
+				ret |= bit_fade_chk(pattern1, start, end, stop);
+				WATCHDOG_RESET();
+			}
 		}
 	}
 	
@@ -757,6 +774,7 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 	icache_enable();
 	dcache_enable();
 #endif
+	printf("return = %d\n",ret);
 	return ret;
 }
 #endif	/* CONFIG_CMD_MEMTEST */

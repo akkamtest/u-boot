@@ -1,19 +1,10 @@
-
 #ifndef _MEMTEST_H_
 #define _MEMTEST_H_
 
-//typedef unsigned long ulong;
-
-
-#ifndef CONFIG_SYS_MEMTEST_START
-//#define	CONFIG_SYS_MEMTEST_START	0x00800000
-//#define	CONFIG_SYS_MEMTEST_END		0x3B9AC9F8
-#define	CONFIG_SYS_MEMTEST_START	0xBEF70000
-#define	CONFIG_SYS_MEMTEST_END		0xBEF80000
+#ifndef CONFIG_SYS_INIT_SP_ADDR
+#define	CONFIG_SYS_INIT_SP_ADDR	0xBEF7000000000000
 #endif /* CONFIG_SYS_MEMTEST_START */
 
-#define MEMTEST_LOWEST_ADDR			0x0000000000000000
-#define MEMTEST_HIGHEST_ADDR	0xFFFFFFFFFFFFFFF8
 #define MOD_SZ					20
 #define MEMTEST_MOD_OFFSET 		0
 #define MEMTEST_ITERATION  		10
@@ -49,11 +40,7 @@
 #define IS_MEMTEST_9		 	0x0100
 #define IS_MEMTEST_10		 	0x0200
 
-
-
-unsigned char verify_start_param(vu_long start);
-unsigned char verify_end_param(vu_long end);
-unsigned char verify_stop_param(vu_long stop);
+unsigned char verify_length(vu_long start, vu_long end, uint size_of_pt);
 unsigned long long int rand1 (unsigned char salt);
 void reset_seed(void);
 void error(vu_long adr, vu_long good, vu_long bad, int test_num);
