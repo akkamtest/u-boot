@@ -4,315 +4,672 @@ import pytest
 import os.path
 import u_boot_utils as util
 
-
-Start = 0x100001
 End   = 0x101000
-
 #@pytest.mark.buildconfigspec('cmd_mem')
 def test_mtest_addr_tst1(u_boot_console):
 
 	""" test of algo addr_tst1
-	Stop = 0
+	Stop = 0 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	memtest_num = 1
-	
+	Start = 0x100000
+	iteration = 1
 	Stop = 0
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
-	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 1' in response) == True),'Error undetected'
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert '1 errors found' in response, 'Memory error undetected'
 	
 	""" test of algo addr_tst1
-	Stop = 1
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	Stop = 1
 	# memory stat : ko   utest positif if error detected
 	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	assert 'TEST number: 1 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
 	
-	assert 'TEST number: 1 interrupted' in response, 'Error undetected or stop err bit not functionnal'
+	""" test of algo addr_tst1
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x3 <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	iteration = 0x3
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 1 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
+	
+	""" test of algo addr_tst1
+	Stop = 0
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0xff <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	
+	Stop = 0
+	iteration = 0xff
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested 255 iteration(s) with 1 errors.' in response, 'Memory error undetected or iteration parameter not functionnal'
+	iteration = 0x1
 
 
 def test_mtest_addr_tst2(u_boot_console):
 
 	""" test of algo addr_tst2
-	Stop = 0
+	Stop = 0 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	memtest_num = 2
-
+	Start = 0x100000
+	iteration = 1
 	Stop = 0
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
-	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 1' in response) == True),'Error undetected'
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert '1 errors found' in response, 'Memory error undetected'
 
 	""" test of algo addr_tst2
-	Stop = 1
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	Stop = 1
 	# memory stat : ko   utest positif if error detected
 	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	assert 'TEST number: 2 interrupted after first error' in response, 'Error undetected or stop err bit not functionnal'
 	
-	assert 'TEST number: 2 interrupted' in response, 'Error undetected or stop err bit not functionnal'
+	""" test of algo addr_tst2
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x3 <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	iteration = 0x3
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 2 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
+	iteration = 0x1
 	
 	""" test of algo addr_tst2
 	Stop  = 0
 	Start = 0x100001  > 
 	End   = 0x101000  > Length is not a multiple of 8 bits
+	iteration = 0x1
 	"""
+	Start = 0x100001
 	# memory length : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End)))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
 	assert 'Tested range is not a multiple of 8 Bytes' in response,'Length Error undetected'
+	Start = 0x100000
+		
+	
+	""" test of algo addr_tst2
+	Stop = 0
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0xff <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	
+	Stop = 0
+	iteration = 0xff
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested 255 iteration(s) with 1 errors.' in response, 'Memory error undetected or iteration parameter not functionnal'
+	iteration = 0x1
 	
 	
 def test_mtest_movinv(u_boot_console):
 
 	""" test of algo movinv
-	Stop = 0
+	Stop = 0 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
-	memtest_num = 3
-
+	memtest_num = 2
+	Start = 0x100000
+	iteration = 1
 	Stop = 0
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
-	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 1' in response) == True),'Error undetected'
-	
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert '1 errors found' in response, 'Memory error undetected'
+
+	""" test of algo movinv
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
 	Stop = 1
 	# memory stat : ko   utest positif if error detected
 	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	assert 'TEST number: 3 interrupted after first error' in response, 'Error undetected or stop err bit not functionnal'
 	
-	assert 'TEST number: 3 interrupted' in response, 'Error undetected or stop err bit not functionnal'
+	""" test of algo movinv
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x3 <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	iteration = 0x3
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 3 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
+	iteration = 0x1
 	
 	""" test of algo movinv
 	Stop  = 0
 	Start = 0x100001  > 
 	End   = 0x101000  > Length is not a multiple of 8 bits
+	iteration = 0x1
 	"""
+	Start = 0x100001
 	# memory length : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End)))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
 	assert 'Tested range is not a multiple of 8 Bytes' in response,'Length Error undetected'
+	Start = 0x100000
+		
+	
+	""" test of algo movinv
+	Stop = 0
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0xff <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	
+	Stop = 0
+	iteration = 0xff
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested 255 iteration(s) with 1 errors.' in response, 'Memory error undetected or iteration parameter not functionnal'
+	iteration = 0x1
 
 def test_mtest_movinv_8bit(u_boot_console):
 
 	""" test of algo movinv_8bit
-	Stop = 0
+	Stop = 0 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	memtest_num = 4
-
 	Stop = 0
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert '1 errors found' in response, 'Memory error undetected'
 	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 1' in response) == True),'Error undetected'
-	
+	""" test of algo movinv_8bit
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
 	Stop = 1
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 4 interrupted after first error' in response, 'Error undetected or stop err bit not functionnal'
 	
-	assert 'TEST number: 4 interrupted' in response, 'Error undetected or stop err bit not functionnal'
+	""" test of algo movinv_8bit
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x3 <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	iteration = 0x3
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 4 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
+	iteration = 0x1
 	
+	""" test of algo movinv_8bit
+	Stop = 0
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0xff <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	Stop = 0
+	iteration = 0xff
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested 255 iteration(s) with 1 errors.' in response, 'Memory error undetected or iteration parameter not functionnal'
+	iteration = 0x1
 
 
 def test_mtest_movinvr(u_boot_console):
 
 	""" test of algo movinvr
-	Stop = 0
+	Stop = 0 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	memtest_num = 5
-
 	Stop = 0
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
-	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 1' in response) == True),'Error undetected'
-	
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert '1 errors found' in response, 'Memory error undetected'
+
+	""" test of algo movinvr
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
 	Stop = 1
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 5 interrupted after first error' in response, 'Error undetected or stop err bit not functionnal'
 	
-	assert 'TEST number: 5 interrupted' in response, 'Error undetected or stop err bit not functionnal'
+	""" test of algo movinvr
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x3 <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	iteration = 0x3
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 5 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
+	iteration = 0x1
 	
 	""" test of algo movinvr
 	Stop  = 0
 	Start = 0x100001  > 
 	End   = 0x101000  > Length is not a multiple of 8 bits
+	iteration = 0x1
 	"""
+	Start = 0x100001
 	# memory length : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End)))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested range is not a multiple of 8 Bytes' in response,'Length Error undetected'
+	Start = 0x100000
+		
 	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 2' in response) == True),'Length Error undetected'
+	""" test of algo movinvr
+	Stop = 0
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0xff <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	
+	Stop = 0
+	iteration = 0xff
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested 255 iteration(s) with 1 errors.' in response, 'Memory error undetected or iteration parameter not functionnal'
+	iteration = 0x1
 
 def test_mtest_move_block(u_boot_console):
 
 	""" test of algo move_block
-	Stop  = 0
+	Stop = 0 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	memtest_num = 6
-
 	Stop = 0
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
-	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 1' in response) == True),'Error undetected'
-	
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert '1 errors found' in response, 'Memory error undetected'
+
+	""" test of algo move_block
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
 	Stop = 1
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 6 interrupted after first error' in response, 'Error undetected or stop err bit not functionnal'
 	
-	assert 'TEST number: 6 interrupted' in response, 'Error undetected or stop err bit not functionnal'
+	""" test of algo move_block
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x3 <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	iteration = 0x3
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 6 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
+	iteration = 0x1
 	
 	""" test of algo move_block
 	Stop  = 0
 	Start = 0x100001  > 
 	End   = 0x101000  > Length is not a multiple of 8 bits
+	iteration = 0x1
 	"""
+	Start = 0x100001
 	# memory length : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End)))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested range is not a multiple of 8 Bytes' in response,'Length Error undetected'
+	Start = 0x100000
+		
 	
-	assert 'Tested range is not a multiple of 128 Bytes' in response,'Length Error undetected'
+	""" test of algo move_block
+	Stop = 0
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0xff <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	
+	Stop = 0
+	iteration = 0xff
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested 255 iteration(s) with 1 errors.' in response, 'Memory error undetected or iteration parameter not functionnal'
+	iteration = 0x1
 	
 	
 def test_mtest_movinv64(u_boot_console):
 
 	""" test of algo movinv64
-	Stop = 0
+	Stop = 0 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	memtest_num = 7
-
 	Stop = 0
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
-	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 1' in response) == True),'Error undetected'
-	
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert '1 errors found' in response, 'Memory error undetected'
+
+	""" test of algo movinv64
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
 	Stop = 1
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 7 interrupted after first error' in response, 'Error undetected or stop err bit not functionnal'
 	
-	assert 'TEST number: 7 interrupted' in response, 'Error undetected or stop err bit not functionnal'
+	""" test of algo movinv64
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x3 <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	iteration = 0x3
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 7 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
+	iteration = 0x1
 	
 	""" test of algo movinv64
 	Stop  = 0
 	Start = 0x100001  > 
 	End   = 0x101000  > Length is not a multiple of 8 bits
+	iteration = 0x1
 	"""
+	Start = 0x100001
 	# memory length : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End)))
-	
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
 	assert 'Tested range is not a multiple of 8 Bytes' in response,'Length Error undetected'
+	Start = 0x100000
+		
+	
+	""" test of algo movinv64
+	Stop = 0
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0xff <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	
+	Stop = 0
+	iteration = 0xff
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested 255 iteration(s) with 1 errors.' in response, 'Memory error undetected or iteration parameter not functionnal'
+	iteration = 0x1
 
 def test_mtest_rand_seq(u_boot_console):
 
 	""" test of algo rand_seq
-	Stop = 0
+	Stop = 0 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	memtest_num = 8
-
 	Stop = 0
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
-	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 1' in response) == True),'Error undetected'
-	
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert '1 errors found' in response, 'Memory error undetected'
+
+	""" test of algo rand_seq
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
 	Stop = 1
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 8 interrupted after first error' in response, 'Error undetected or stop err bit not functionnal'
 	
-	assert 'TEST number: 8 interrupted' in response, 'Error undetected or stop err bit not functionnal'
+	""" test of algo rand_seq
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x3 <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	iteration = 0x3
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 8 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
+	iteration = 0x1
 	
 	""" test of algo rand_seq
 	Stop  = 0
 	Start = 0x100001  > 
 	End   = 0x101000  > Length is not a multiple of 8 bits
+	iteration = 0x1
 	"""
+	Start = 0x100001
 	# memory length : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End)))
-	
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
 	assert 'Tested range is not a multiple of 8 Bytes' in response,'Length Error undetected'
+	Start = 0x100000
+		
+	
+	""" test of algo rand_seq
+	Stop = 0
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0xff <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	
+	Stop = 0
+	iteration = 0xff
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested 255 iteration(s) with 1 errors.' in response, 'Memory error undetected or iteration parameter not functionnal'
+	iteration = 0x1
 
 
 
 def test_mtest_modtst(u_boot_console):
 
 	""" test of algo modtst
-	Stop = 0
+	Stop = 0 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	memtest_num = 9
-
 	Stop = 0
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
-	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 1' in response) == True),'Error undetected'
-	
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert '1 errors found' in response, 'Memory error undetected'
+
+	""" test of algo modtst
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
 	Stop = 1
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 9 interrupted after first error' in response, 'Error undetected or stop err bit not functionnal'
 	
-	assert 'TEST number: 9 interrupted' in response, 'Error undetected or stop err bit not functionnal'
+	""" test of algo modtst
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x3 <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	iteration = 0x3
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 9 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
+	iteration = 0x1
 	
 	""" test of algo modtst
 	Stop  = 0
 	Start = 0x100001  > 
 	End   = 0x101000  > Length is not a multiple of 8 bits
+	iteration = 0x1
 	"""
+	Start = 0x100001
 	# memory length : ko   utest positif if error detected
 	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End)))
-	
 	assert 'Tested range is not a multiple of 8 Bytes' in response,'Length Error undetected'
+	Start = 0x100000
+		
+	
+	""" test of algo modtst
+	Stop = 0
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0xff <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	
+	Stop = 0
+	iteration = 0xff
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested 255 iteration(s) with 1 errors.' in response, 'Memory error undetected or iteration parameter not functionnal'
+	iteration = 0x1
 
 
 def test_mtest_bit_fade(u_boot_console):
 
-	""" test of algo movinvr
-	Stop = 0
+	""" test of algo bit_fade
+	Stop = 0 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
 	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
 	"""
 	memtest_num = 10
-
 	Stop = 0
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
-	
-	assert ((('return = 0' in response) == True) or (('return = 1' in response) == True) or (('return = 2' in response) == True)), 'Unexpected result'
-	assert (('return = 1' in response) == True),'Error undetected'
-	
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert '1 errors found' in response, 'Memory error undetected'
+
+	""" test of algo bit_fade
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x1
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
 	Stop = 1
 	# memory stat : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), '', ''))
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 10 interrupted after first error' in response, 'Error undetected or stop err bit not functionnal'
 	
-	assert 'TEST number: 10 interrupted' in response, 'Error undetected or stop err bit not functionnal'
+	""" test of algo bit_fade
+	Stop = 1 <
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0x3 <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	iteration = 0x3
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'TEST number: 10 interrupted after first error' in response, 'Memory error undetected or stop err bit not functionnal'
+	iteration = 0x1
 	
-	""" test of algo movinvr
+	""" test of algo bit_fade
 	Stop  = 0
 	Start = 0x100001  > 
 	End   = 0x101000  > Length is not a multiple of 8 bits
+	iteration = 0x1
 	"""
+	Start = 0x100001
 	# memory length : ko   utest positif if error detected
-	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End)))
-	
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
 	assert 'Tested range is not a multiple of 8 Bytes' in response,'Length Error undetected'
+	Start = 0x100000
+		
+	
+	""" test of algo bit_fade
+	Stop = 0
+	Start = 0x100000
+	End   = 0x101000
+	iteration = 0xff <
+	An error is injected when DEBUG_MEMTEST is active (cf. memtest.c)
+	"""
+	
+	Stop = 0
+	iteration = 0xff
+	# memory stat : ko   utest positif if error detected
+	response = u_boot_console.run_command('mtest {} {} {} {} {}'.format(hex(memtest_num), hex(Stop), hex(Start), hex(End), hex(iteration)))
+	assert 'Tested 255 iteration(s) with 1 errors.' in response, 'Memory error undetected or iteration parameter not functionnal'
+	iteration = 0x1
 
 
 
@@ -389,4 +746,4 @@ def test_signature_mtest(u_boot_console):
 	Start_test =0x00100000
 	End_test = 0x00101000
 	response = u_boot_console.run_command('mtest {} {} {} {}'.format(hex(memtest_num_test), hex(Stop_test), hex(Start_test), hex(End_test)))
-	assert 'TEST number: 1 interrupted' in response, 'Failed to stop at first error'
+	assert 'TEST number: 1 interrupted after first error' in response, 'Failed to stop at first error'

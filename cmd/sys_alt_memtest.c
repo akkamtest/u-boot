@@ -1,5 +1,5 @@
 #include <common.h>
-#include "memtest.h"
+#include "sys_alt_memtest.h"
 
 /* Uncomment for debug */
 #define DEBUG_MEMTEST 1 
@@ -23,7 +23,7 @@ unsigned char verify_length(vu_long start, vu_long end, uint size_of_pt) {
 	return(0);
 }
 
-unsigned long long int rand1 (unsigned char salt) {
+unsigned long long int rand1 (ulong salt) {
 	static unsigned int a = 18000, b = 30903, c = 15333, d = 21041;
 
 	SEED_A  = salt*a*(SEED_A &65535) + (SEED_A >>16);
@@ -48,7 +48,7 @@ void reset_seed(void) {
 
 /*  Allows to visualize which test return the error, the faulty address and the difference between the expected value and the one read */
 void error(vu_long adr, vu_long good, vu_long bad, int test_num) {
-	printf ("\nERROR\nTEST number: %d, Faulty address: %08lx, Expected result: %08lx, Obtained value: %08lx\n", test_num, adr, good, bad);
+	printf ("ERROR TEST number: %d, Faulty address: %08lx, Expected result: %08lx, Obtained value: %08lx\n", test_num, adr, good, bad);
 }
 
 #ifdef DEBUG_MEMTEST
@@ -63,8 +63,9 @@ Test 1 [Address test, 8bits walking ones]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running */
-unsigned char addr_tst1(vu_long start, vu_long end, unsigned char stop_after_err) {
-	unsigned char i, mask, *p, *pe, ret = 0;
+ulong addr_tst1(vu_long start, vu_long end, unsigned char stop_after_err) {
+	unsigned char i, mask, *p, *pe;
+	ulong errs = 0;
 	int test_num = 1;
 #ifdef DEBUG_MEMTEST
 		uint err_position;
@@ -88,15 +89,15 @@ unsigned char addr_tst1(vu_long start, vu_long end, unsigned char stop_after_err
 #endif
 			if(*p != mask) {
 				error((vu_long)p, mask, (vu_long)*p, test_num);
-				ret = 1;
+				errs ++;
 				if (stop_after_err == 1) {
-					printf ("TEST number: %d interrupted\n", test_num);
-					return(ret);
+					printf ("TEST number: %d interrupted after first error\n", test_num);
+					return(errs);
 				}
 			}
 		}
 	}
-	return(ret);
+	return(errs);
 }
 
 /* 
@@ -104,13 +105,14 @@ Test 2 [Address test, own address pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running */
-unsigned char addr_tst2(vu_long start, vu_long end, char stop_after_err)
+ulong addr_tst2(vu_long start, vu_long end, unsigned char stop_after_err)
 {
 	vu_long *p, *pe;
-	int test_num = 2, ret = 0;
+	ulong errs = 0;
+	int test_num = 2;
 	/* Function should be used with multiple of 8bits length*/
 	if (verify_length(start, end, 8)) {
-		return(2);
+		return(errs);
 	}
 #ifdef DEBUG_MEMTEST
 			ulong err_position;
@@ -144,14 +146,14 @@ unsigned char addr_tst2(vu_long start, vu_long end, char stop_after_err)
 	{
 		if(*p != (vu_long)p) {
 			error((vu_long)p, (vu_long)p, *p, test_num);
-			ret = 1;
+			errs ++;
 			if (stop_after_err == 1) {
-				printf ("TEST number: %d interrupted\n", test_num);
-				return(ret);
+				printf ("TEST number: %d interrupted after first error\n", test_num);
+				return(errs);
 			}
 		}
 	}
-	return(ret);
+	return(errs);
 }
 
 /*
@@ -160,14 +162,15 @@ Test 3 [Moving inversion, pattern of all Ones & Zeros]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-unsigned char movinv (int iter, vu_long start, vu_long end, unsigned char stop_after_err)
+ulong movinv (int iter, vu_long start, vu_long end, unsigned char stop_after_err)
 {
-	int i, test_num = 3, ret = 0;
+	int i, test_num = 3;
+	ulong errs = 0;
 	vu_long *p, *pe;
 	vu_long p1 = 0xA5A5A5A5A5A5A5A5;
 	/* Function should be used with multiple of 8bits length*/
 	if (verify_length(start, end, 8)) {
-		return(1);
+		return(errs);
 	}
 #ifdef DEBUG_MEMTEST
 		ulong err_position;
@@ -203,10 +206,10 @@ unsigned char movinv (int iter, vu_long start, vu_long end, unsigned char stop_a
 		for (; p < pe; p++) {
 			if (*p != p1) {
 				error((unsigned long long int)p, p1, *p, test_num);
-				ret = 1;
+				errs ++;
 				if (stop_after_err == 1) {
-					printf ("TEST number: %d interrupted\n", test_num);
-					return(ret);
+					printf ("TEST number: %d interrupted after first error\n", test_num);
+					return(errs);
 				}
 			}
 			*p = ~p1;
@@ -220,16 +223,16 @@ unsigned char movinv (int iter, vu_long start, vu_long end, unsigned char stop_a
 		{
 			if (*p != ~p1) {
 				error((unsigned long long int)p, ~p1, *p, test_num);
-				ret = 1;
+				errs ++;
 				if (stop_after_err == 1) {
-					printf ("TEST number: %d interrupted\n", test_num);
-					return(ret);
+					printf ("TEST number: %d interrupted after first error\n", test_num);
+					return(errs);
 				}
 			}
 			*p = p1;
 		} while (--p >= pe);
 	}
-	return(ret);
+	return(errs);
 }
 
 /*
@@ -238,12 +241,13 @@ Test 4 [Moving inversion, 8bits wide pattern of all Ones & Zeros]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-unsigned char movinv_8bit (int iter, vu_long start, vu_long end, vu_long stop_after_err)
+ulong movinv_8bit (int iter, vu_long start, vu_long end, vu_long stop_after_err)
 {
 	int test_num = 4;
-	unsigned char *p, *pe, i, ret = 0;
+	unsigned char *p, *pe, i;
 	unsigned char p1 = 0x0F;
 	unsigned char p2 = ~p1;
+	ulong errs = 0;
 #ifdef DEBUG_MEMTEST
 			ulong err_position;
 			err_position = (end - start)/2; /* error position is half way of the tested segment */
@@ -273,10 +277,10 @@ unsigned char movinv_8bit (int iter, vu_long start, vu_long end, vu_long stop_af
 		for (; p < pe; p++) {
 			if (*p != p1) {
 				error((vu_long)p, p1, (unsigned char)*p, test_num);
-				ret = 1;
+				errs ++;
 				if (stop_after_err == 1) {
-					printf ("TEST number: %d interrupted\n", test_num);
-					return(ret);
+					printf ("TEST number: %d interrupted after first error\n", test_num);
+					return(errs);
 				}
 			}
 			*p = p2;
@@ -289,16 +293,16 @@ unsigned char movinv_8bit (int iter, vu_long start, vu_long end, vu_long stop_af
 		do {
 			if (*p != p2) {
 				error((vu_long)p, p2, (unsigned char)*p, test_num);
-				ret = 1;
+				errs ++;
 				if (stop_after_err == 1) {
-					printf ("TEST number: %d interrupted\n", test_num);
-					return(ret);
+					printf ("TEST number: %d interrupted after first error\n", test_num);
+					return(errs);
 				}
 			}
 			*p = p1;
 		} while (--p >= pe);
 	}
-	return(ret);
+	return(errs);
 }
 
 /*
@@ -307,15 +311,15 @@ Test 5 [Moving inversion, random pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-unsigned char movinvr (int iter, vu_long start, vu_long end, unsigned char stop_after_err)
+ulong movinvr (int iter, vu_long start, vu_long end, unsigned char stop_after_err)
 {
-	int i, ret;
+	int i;
 	int test_num = 5;
-	vu_long *p, *pe;
-	vu_long p1;
+	vu_long *p, *pe, p1;
+	ulong errs = 0;
 	/* Function should be used with multiple of 8bits length*/
 	if (verify_length(start, end, 8)) {
-		return(2);
+		return(errs);
 	}
 #ifdef DEBUG_MEMTEST
 		ulong err_position;
@@ -356,10 +360,10 @@ unsigned char movinvr (int iter, vu_long start, vu_long end, unsigned char stop_
 		for (; p < pe; p++) {
 			if (*p != p1) {
 				error((vu_long)p, p1, *p, test_num);
-				ret = 1;
+				errs ++;
 				if (stop_after_err == 1) {
-					printf ("TEST number: %d interrupted\n", test_num);
-					return(ret);
+					printf ("TEST number: %d interrupted after first error\n", test_num);
+					return(errs);
 				}
 			}
 			*p = ~p1;
@@ -372,9 +376,9 @@ unsigned char movinvr (int iter, vu_long start, vu_long end, unsigned char stop_
 		do {
 			if (*p != ~p1) {
 				error((vu_long)p, ~p1, *p, test_num);
-				ret = 1;
+				errs ++;
 				if (stop_after_err == 1) {
-					return(ret);
+					return(errs);
 				}
 			}
 			*p = p1;
@@ -383,7 +387,7 @@ unsigned char movinvr (int iter, vu_long start, vu_long end, unsigned char stop_
 #endif
 		} while (--p >= pe);
 	}
-	return(ret);
+	return(errs);
 }
 
 /*
@@ -391,9 +395,10 @@ Test 6 [block_move, random pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-unsigned char move_block(vu_long start, vu_long end, unsigned char stop_after_err)
+ulong move_block(vu_long start, vu_long end, unsigned char stop_after_err)
 {
 	vu_long length, mask = 0x80000000, i;
+	ulong errs = 0;
 	uint tab[16] =  {MEMTEST_PATTERN_MB_0,
 					MEMTEST_PATTERN_MB_1,
 					MEMTEST_PATTERN_MB_2,
@@ -410,11 +415,11 @@ unsigned char move_block(vu_long start, vu_long end, unsigned char stop_after_er
 					MEMTEST_PATTERN_MB_13,
 					MEMTEST_PATTERN_MB_14,
 					MEMTEST_PATTERN_MB_15};
-	uint j,test_num = 6, ret = 0;
+	uint j,test_num = 6;
 	uint *p1, *p2;
 	/* length should be a multiple of 2 blocks of 64 Bytes */
 	if (verify_length(start, end, 128)) {
-		return(2);
+		return(errs);
 	}
 #ifdef DEBUG_MEMTEST
 		ulong err_position;
@@ -427,7 +432,7 @@ unsigned char move_block(vu_long start, vu_long end, unsigned char stop_after_er
 	length = end - start;/* length should be at least 2 blocks of 64 Bytes */
 	if (length < 128) {
 		printf ("Tested range is too small - it should be 128 Bytes at least\n");
-		return(0);
+		return(errs);
 	}
 	/* Write each address with it's own address */
 	for (i=start; i < end; i+=64) {
@@ -476,14 +481,14 @@ unsigned char move_block(vu_long start, vu_long end, unsigned char stop_after_er
 #endif		
 		if (*p1!=*p2) {
 			error((vu_long)p1, *p1, *p2, test_num);
-			ret = 1;
+			errs ++;
 			if (stop_after_err == 1) {
-				printf ("TEST number: %d interrupted\n", test_num);
-				return(ret);
+				printf ("TEST number: %d interrupted after first error\n", test_num);
+				return(errs);
 			}
 		}
 	}
-	return(ret);
+	return(errs);
 }
 
 /*
@@ -492,16 +497,17 @@ Test 7 [Moving inversion, 64 bits shifting pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-unsigned char movinv64(vu_long start, vu_long end, unsigned char stop_after_err)
+ulong movinv64(vu_long start, vu_long end, unsigned char stop_after_err)
 {
-	int k=0, ret = 0;
+	int k=0;
 	vu_long *p, *pe, pat, comp_pat, p1 = MEMTEST_PATTERN_64_A;
 	int test_num = 7;
 	vu_long tab[64];
 	unsigned char tab_compl = 0;
+	ulong errs = 0;
 	/* Function should be used with multiple of 8bits length*/
 	if (verify_length(start, end, 8)) {
-		return(2);
+		return(errs);
 	}
 	
 #ifdef DEBUG_MEMTEST
@@ -557,10 +563,10 @@ unsigned char movinv64(vu_long start, vu_long end, unsigned char stop_after_err)
 		pat = tab[k];
 		if (*p != pat) {
 			error((unsigned long long int)p, pat, *p, test_num);
-			ret = 1;
+			errs ++;
 			if (stop_after_err == 1) {
-				printf ("TEST number: %d interrupted\n", test_num);
-				return(ret);
+				printf ("TEST number: %d interrupted after first error\n", test_num);
+				return(errs);
 			}
 		}
 		comp_pat = ~pat;
@@ -583,10 +589,10 @@ unsigned char movinv64(vu_long start, vu_long end, unsigned char stop_after_err)
 		comp_pat = ~pat;
 		if (*p != comp_pat) {
 			error((unsigned long long int)p, comp_pat, *p, test_num+1);
-			ret = 1;
+			errs ++;
 			if (stop_after_err == 1) {
-				printf ("TEST number: %d interrupted\n", test_num);
-				return(ret);
+				printf ("TEST number: %d interrupted after first error\n", test_num);
+				return(errs);
 			}
 		}
 		*p = pat;
@@ -601,7 +607,7 @@ unsigned char movinv64(vu_long start, vu_long end, unsigned char stop_after_err)
 			k = 63;
 		}
 	}
-	return(ret);
+	return(errs);
 }
 
 /*
@@ -610,14 +616,15 @@ Test 8 [Half moving inversion, random sequence pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-unsigned char rand_seq(unsigned char iter_rand, vu_long start, vu_long end, unsigned char stop_after_err)
+ulong rand_seq(unsigned char iter_rand, vu_long start, vu_long end, unsigned char stop_after_err)
 {
-	int i, ret = 0;
+	int i;
 	vu_long *p, *pe, num;
 	int test_num = 8;
+	ulong errs = 0;
 	/* Function should be used with multiple of 8bits length*/
 	if (verify_length(start, end, 8)) {
-		return(2);
+		return(errs);
 	}
 #ifdef DEBUG_MEMTEST
 		ulong err_position;
@@ -657,10 +664,10 @@ unsigned char rand_seq(unsigned char iter_rand, vu_long start, vu_long end, unsi
 			}
 			if (*p != num) {
 				error((vu_long)p, num, *p, test_num);
-				ret = 1;
+				errs ++;
 				if (stop_after_err == 1) {
-					printf ("TEST number: %d interrupted\n", test_num);
-					return(ret);
+					printf ("TEST number: %d interrupted after first error\n", test_num);
+					return(errs);
 				}
 			}
 			*p = ~num;
@@ -669,7 +676,7 @@ unsigned char rand_seq(unsigned char iter_rand, vu_long start, vu_long end, unsi
 #endif
 		}
 	}
-	return(ret);
+	return(errs);
 }
 
 /*
@@ -678,15 +685,16 @@ Test 9 [modulo 20, random pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-unsigned char modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start, vu_long end, unsigned char stop_after_err)
+ulong modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start, vu_long end, unsigned char stop_after_err)
 {
-	int k, i, ret = 0;
+	int k, i;
 	int test_num = 9; 
 	vu_long *p;
 	vu_long *pe;
+	ulong errs = 0;
 	/* Function should be used with multiple of 8bits length*/
 	if (verify_length(start, end, 8)) {
-		return(2);
+		return(errs);
 	}
 #ifdef DEBUG_MEMTEST
 		ulong err_position;
@@ -733,14 +741,14 @@ unsigned char modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start
 #endif	
 		if (*p != p1) {
 			error((vu_long)p, p1, *p, test_num);
-			ret = 1;
+			errs ++;
 			if (stop_after_err == 1) {
-				printf ("TEST number: %d interrupted\n", test_num);
-				return(ret);
+				printf ("TEST number: %d interrupted after first error\n", test_num);
+				return(errs);
 			}
 		}
 	}
-	return(ret);
+	return(errs);
 }
 
 /*
@@ -748,15 +756,17 @@ Test 10(0xA) part fill - [bit fade, 64bits pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-unsigned char bit_fade_fill(vu_long p1, vu_long start, vu_long end, unsigned char stop_after_err)
+ulong bit_fade_fill(vu_long p1, vu_long start, vu_long end, unsigned char stop_after_err)
 {
 	vu_long *p, *pe;
+	ulong errs = 0;
+	
 #ifdef DEBUG_MEMTEST
 	/*int test_num = 10;*/
 #endif
 	/* Function should be used with multiple of 8bits length*/
 	if (verify_length(start, end, 8)) {
-		return(2);
+		return(errs);
 	}
 #ifdef DEBUG_MEMTEST
 		ulong err_position;
@@ -784,7 +794,7 @@ unsigned char bit_fade_fill(vu_long p1, vu_long start, vu_long end, unsigned cha
 			/*mtest_debug(test_num, 0, (vu_long)p, *p);*/
 		}
 #endif
-	return(0);
+	return(errs);
 }
 
 /*
@@ -792,13 +802,14 @@ Test 10(0xA) fade part - [bit fade, 64bits pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-unsigned char bit_fade_chk(vu_long p1, vu_long start, vu_long end, unsigned char stop_after_err)
+ulong bit_fade_chk(vu_long p1, vu_long start, vu_long end, unsigned char stop_after_err)
 {
 	vu_long *p, *pe;
-	int test_num = 10, ret = 0;
+	ulong errs = 0;
+	int test_num = 10;
 	/* Function should be used with multiple of 8bits length*/
 	if (verify_length(start, end, 8)) {
-		return(2);
+		return(errs);
 	}
 	/* Initialise tested memory range */
 	p = (vu_long *)start;
@@ -807,14 +818,14 @@ unsigned char bit_fade_chk(vu_long p1, vu_long start, vu_long end, unsigned char
 	for (;p < pe ;p++) {
 		if (*p != p1) {
 			error((vu_long)p, p1, *p, test_num);
-			ret = 1;
+			errs ++;
 			if (stop_after_err == 1) {
-				printf ("TEST number: %d interrupted\n", test_num);
-				return(ret);
+				printf ("TEST number: %d interrupted after first error\n", test_num);
+				return(errs);
 			}
 		}
 	}
-	return(ret);
+	return(errs);
 }
 
 void wait (unsigned int sec)
