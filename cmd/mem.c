@@ -573,22 +573,19 @@ static int do_mem_loopw(cmd_tbl_t *cmdtp, int flag, int argc,
 
 
 #ifdef CONFIG_CMD_MEMTEST
-static ulong mem_test_alt(vu_long *buf, ulong test, ulong stop, ulong start_addr, ulong end_addr,
+static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr, ulong end_addr,
 			  ulong iterations)
 {
 	ulong errs = 0;
-	ulong length, test_id, pattern1;
+	ulong length;
+	vu_long *addr;
 	
-
-	/*
-	 */
+	addr = buf;
 	length = end_addr - start_addr;
-	start_addr = (ulong)buf;
+	start_addr = (ulong)addr;
 	end_addr = start_addr + length;
-	//printf("Testing memory area from %08lx to %08lx:\n", start_addr, end_addr);
+	printf("Testing memory area from %08lx to %08lx:\n", start_addr, end_addr);
 	
-	if (test == 0) test_id = 0x03FF;
-	else test_id = 0x0001 << (test - 1);
 	
 /* Disable and flush cache */
 #ifdef CONFIG_CMD_CACHE	
@@ -597,81 +594,53 @@ static ulong mem_test_alt(vu_long *buf, ulong test, ulong stop, ulong start_addr
 	dcache_disable();
 #endif
 	
-	if ((test_id & IS_MEMTEST_1) == IS_MEMTEST_1) {
-		printf("addr_tst1 stop option = %lx, start = %08lx, end = %08lx, number of iteration = %0lu\n", stop, start_addr, end_addr, iterations);
-		errs = addr_tst1(start_addr, end_addr, stop);
-		WATCHDOG_RESET();
-	}
+	printf("addr_tst1 start = %08lx, end = %08lx, number of iteration = %0lu\n", start_addr, end_addr, iterations);
+	errs = addr_tst1(start_addr, end_addr);
+	WATCHDOG_RESET();
+
+	printf("addr_tst2: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
+	errs += addr_tst2(start_addr, end_addr);
+	WATCHDOG_RESET();
+
+	printf("movinv: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
+	errs += movinv (MEMTEST_ITERATION, pattern1, start_addr, end_addr);
+	WATCHDOG_RESET();
+
+	printf("movinv_8bit: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
+	errs += movinv_8bit (MEMTEST_ITERATION,  (unsigned char)pattern1, start_addr, end_addr);
+
+	printf("movinvr: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
+	errs += movinvr (MEMTEST_ITERATION, start_addr, end_addr);
+	WATCHDOG_RESET();
+
+	printf("move_block start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
+	errs += move_block(start_addr, end_addr);
+	WATCHDOG_RESET();
 	
-	if (((test_id & IS_MEMTEST_2) == IS_MEMTEST_2) && (!(errs&&stop))) {
-		printf("addr_tst2: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %lu\n", stop, start_addr, end_addr, iterations);
-		errs += addr_tst2(start_addr, end_addr, stop);
-		WATCHDOG_RESET();
-	}
-	
-	if (((test_id & IS_MEMTEST_3) == IS_MEMTEST_3) && (!(errs&&stop))) {
-		printf("movinv: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %lu\n", stop, start_addr, end_addr, iterations);
-		errs += movinv (MEMTEST_ITERATION, start_addr, end_addr, stop);
-		WATCHDOG_RESET();
-	}
-	
-	if (((test_id & IS_MEMTEST_4) == IS_MEMTEST_4) && (!(errs&&stop))) {
-		printf("movinv_8bit: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %lu\n", stop, start_addr, end_addr, iterations);
-		errs += movinv_8bit (MEMTEST_ITERATION, start_addr, end_addr, stop);
-		WATCHDOG_RESET();
-	}
-	
-	if (((test_id & IS_MEMTEST_5) == IS_MEMTEST_5) && (!(errs&&stop))) {
-		printf("movinvr: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %lu\n", stop, start_addr, end_addr, iterations);
-		errs += movinvr (MEMTEST_ITERATION, start_addr, end_addr, stop);
-		WATCHDOG_RESET();
-	}
-	
-	if (((test_id & IS_MEMTEST_6) == IS_MEMTEST_6) && (!(errs&&stop))) {
-		printf("move_block stop option = %lx, start = %08lx, end = %08lx, number of iteration = %lu\n", stop, start_addr, end_addr, iterations);
-		errs += move_block(start_addr, end_addr, stop);
-		WATCHDOG_RESET();
-	}
-	
-	if (((test_id & IS_MEMTEST_7) == IS_MEMTEST_7) && (!(errs&&stop))) {
-		printf("movinv64: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %lu\n", stop, start_addr, end_addr, iterations);
-		errs += movinv64(start_addr, end_addr, stop);
-		WATCHDOG_RESET();
-	}
-	
-	if (((test_id & IS_MEMTEST_8) == IS_MEMTEST_8) && (!(errs&&stop))) {
-		printf("rand_seq: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %lu\n", stop, start_addr, end_addr, iterations);
-		errs += rand_seq(iterations, start_addr, end_addr, stop);
-		WATCHDOG_RESET();
-	}
-	
-	if (((test_id & IS_MEMTEST_9) == IS_MEMTEST_9) && (!(errs&&stop))) {
-		printf("modtst: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %lu\n", stop, start_addr, end_addr, iterations);
-		reset_seed();
-		pattern1 = rand1(iterations);
-		errs += modtst(MEMTEST_MOD_OFFSET, MEMTEST_ITERATION, pattern1, ~pattern1, start_addr, end_addr, stop);
-		WATCHDOG_RESET();
-	}
-	
-	if (((test_id & IS_MEMTEST_10) == IS_MEMTEST_10) && (!(errs&&stop)))	{
-		printf("bit_fade: stop option = %lx, start = %08lx, end = %08lx, number of iteration = %lu\n", stop, start_addr, end_addr, iterations);
-		reset_seed();
-		pattern1 = rand1(iterations);
-		errs+=bit_fade_fill(pattern1, start_addr, end_addr, stop);
-		if (!(errs&&stop)) {
-			wait(2);
-			errs += bit_fade_chk(pattern1, start_addr, end_addr, stop);
-			WATCHDOG_RESET();
-		}
-		errs|=bit_fade_fill(pattern1, start_addr, end_addr, stop);
-		if (!(errs&&stop)) {
-			wait(2);
-			errs += bit_fade_chk(pattern1, start_addr, end_addr, stop);
-			WATCHDOG_RESET();
-		}
-	}
-	
-/* Disable cache */
+	printf("movinv64: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
+	errs += movinv64(pattern1, start_addr, end_addr);
+	WATCHDOG_RESET();
+
+	printf("rand_seq: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
+	errs += rand_seq(iterations, start_addr, end_addr);
+
+	printf("modtst: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
+	errs += modtst(MEMTEST_MOD_OFFSET, MEMTEST_ITERATION, pattern1, ~pattern1, start_addr, end_addr);
+	WATCHDOG_RESET();
+
+	printf("bit_fade: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
+	errs+=bit_fade_fill(pattern1, start_addr, end_addr);
+	WATCHDOG_RESET();
+	wait(2);
+	errs += bit_fade_chk(pattern1, start_addr, end_addr);
+	WATCHDOG_RESET();
+	errs+=bit_fade_fill(~pattern1, start_addr, end_addr);
+	WATCHDOG_RESET();
+	wait(2);
+	errs += bit_fade_chk(~pattern1, start_addr, end_addr);
+	WATCHDOG_RESET();
+
+/* Enable cache */
 #ifdef CONFIG_CMD_CACHE	
 	icache_enable();
 	dcache_enable();
@@ -748,12 +717,13 @@ static ulong mem_test_quick(vu_long *buf, ulong start_addr, ulong end_addr,
 static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 			char * const argv[])
 {
-	ulong start = 0, end = 0, stop = 0, test = 0, iteration_limit = 0;
+	ulong start = 0, end = 0;
 	vu_long *buf, *dummy;
-	int ret = 0;
+	ulong iteration_limit = 0;
+	int ret;
 	ulong errs = 0;	/* number of errors, or -1 if interrupted */
 	ulong pattern = 0;
-	ulong iteration;
+	int iteration;
 #if defined(CONFIG_SYS_ALT_MEMTEST)
 	const int alt_test = 1;
 #else
@@ -762,65 +732,27 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 
 	start = CONFIG_SYS_MEMTEST_START;
 	end = CONFIG_SYS_MEMTEST_END;
-	
-	/* set memory range default values */
-	start = CONFIG_SYS_MEMTEST_START;
-	end = CONFIG_SYS_MEMTEST_END;
-	
-	/* test number, 0 for run all tests */ 
-	if (argc > 1) {
-		if (strict_strtoul(argv[1], 16, &test) < 0) {
-			printf ("'Error parsing [test] argument (test id)\n");
+
+	if (argc > 1)
+		if (strict_strtoul(argv[1], 16, &start) < 0)
 			return CMD_RET_USAGE;
-		}
-		else if ((test < 0x0)||(test > 0xa)) {
-			printf("Invalid test id\n");
+
+	if (argc > 2)
+		if (strict_strtoul(argv[2], 16, &end) < 0)
 			return CMD_RET_USAGE;
-		}
-	}
-	
-	/* stop indicateur, if 1 stop at the first test error */ 
-	if (argc > 2) {
-		if (strict_strtoul(argv[2], 16, &stop) < 0)	{
-			printf ("'Error parsing [stop] argument (0 or other value)\n");
-			return CMD_RET_USAGE;
-		}
-		else if ((stop != 0)&&(stop!= 1)) {
-			printf ("'Invalid [stop] argument, should be 0 or 1\n");
-			return CMD_RET_USAGE;
-		}
-	}
-		
-	/* start address of the memory area to be tested */ 
+
 	if (argc > 3)
-		if (strict_strtoul(argv[3], 16, &start) < 0) {
-			printf ("Error parsing start adress =%08lx \n", start);
+		if (strict_strtoul(argv[3], 16, &pattern) < 0)
 			return CMD_RET_USAGE;
-		}
-	
-	/* end address of the memory area to be tested */
-	if (argc > 4) {
-		if (strict_strtoul(argv[4], 16, &end) < 0) {
-			printf ("'Error parsing end adress =%08lx \n", end);
+
+	if (argc > 4)
+		if (strict_strtoul(argv[4], 16, &iteration_limit) < 0)
 			return CMD_RET_USAGE;
-		}
-		else if (end <= start) {
-			printf("Inavlid memory area (null or less than 0)\n");
-			return CMD_RET_USAGE;
-		}
+
+	if (end < start) {
+		printf("Refusing to do empty test\n");
+		return -1;
 	}
-	/* Verify start and end address parameters */
-	if ((start < CONFIG_SYS_MEMTEST_START)||(end > CONFIG_SYS_MEMTEST_END)) {
-		printf ("'Error : start address min =%08lx, end address max =%08lx\n", (ulong)CONFIG_SYS_MEMTEST_START, (ulong)CONFIG_SYS_MEMTEST_END);
-		return CMD_RET_USAGE;
-	}
-	
-	/* Number of iterations for each test */ 
-	if (argc > 5)
-		if (strict_strtoul(argv[5], 16, &iteration_limit) < 0) {
-			printf ("'Error parsing number of iteration =%08lx \n", iteration_limit);
-			return CMD_RET_USAGE;
-		}
 
 	printf("Testing %08lx ... %08lx:\n", start, end);
 	debug("%s:%d: start %#08lx end %#08lx\n", __func__, __LINE__,
@@ -828,20 +760,18 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 
 	buf = map_sysmem(start, end - start);
 	dummy = map_sysmem(CONFIG_SYS_MEMTEST_SCRATCH, sizeof(vu_long));
-
-
 	for (iteration = 0;
-	(!iteration_limit || (iteration < iteration_limit)) && !(errs&&stop);
-	iteration++) {
+			!iteration_limit || iteration < iteration_limit;
+			iteration++) {
 		if (ctrlc()) {
 			errs = -1UL;
 			break;
 		}
 
-		//printf("Iteration: %lu\r", iteration + 1);
+		printf("Iteration: %6d\r", iteration + 1);
 		debug("\n");
 		if (alt_test) {
-			errs = mem_test_alt(buf, test, stop, start, end, iteration + 1);
+			errs = mem_test_alt(buf, pattern, start, end, iteration + 1);
 		} else {
 			errs = mem_test_quick(buf, start, end, pattern,
 					      iteration);
@@ -849,7 +779,6 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 		if (errs == -1UL)
 			break;
 	}
-
 
 	/*
 	 * Work-around for eldk-4.2 which gives this warning if we try to
@@ -869,11 +798,11 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 		putc('\n');
 		ret = 1;
 	} else {
-		printf("Tested %lu iteration(s) with %lu errors.\n",
+		printf("Tested %d iteration(s) with %lu errors.\n",
 			iteration, errs);
 		ret = errs != 0;
 	}
-	
+
 	return ret;
 }
 #endif	/* CONFIG_CMD_MEMTEST */
@@ -1147,25 +1076,9 @@ U_BOOT_CMD(
 
 #ifdef CONFIG_CMD_MEMTEST
 U_BOOT_CMD(
-	mtest,	6,	1,	do_mem_mtest,
-	"TEST RAM",
-	"[mtest [stop [start [end [iterations]]]]]\n"
-	"[test] hexadecimal 0x0 from 0xA:\n"
-	" 0 : All tests\n"
-	" 1 : addr_tst1\n"
-	" 2 : addr_tst2\n"
-	" 3 : movinv\n"
-	" 4 : movinv_8bit\n"
-	" 5 : movinvr\n"
-	" 6 : move_block\n"
-	" 7 : movinv64\n"
-	" 8 : rand_seq\n"
-	" 9 : modtst\n"
-	" A : bit_fade\n"
-	" [Stop]: stop running when encouter an error\n"
-	" [Start]: start address (hex)\n"
-	" [End]: End address excluded(hex)\n"
-	" [iterations] : number of iteration for each test (hex ulong)\n"
+	mtest,	5,	1,	do_mem_mtest,
+	"simple RAM read/write test",
+	"[start [end [pattern [iterations]]]]"
 );
 #endif	/* CONFIG_CMD_MEMTEST */
 
