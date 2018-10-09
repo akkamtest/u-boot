@@ -1,12 +1,9 @@
+/*Uncomment to see trace*/
+/*#define DEBUG*/
+/*Uncomment to generate errors*/
+/*#define DEBUG_ADD_ERR*/
 #include <common.h>
 #include "sys_alt_memtest.h"
-
-/* Uncomment for debug */
-#define DEBUG_MEMTEST 1 
-
-/* no optimization are requiered */
-#pragma GCC push_options 
-#pragma GCC optimize ("O0")
 
 static unsigned long long int SEED_A;
 static unsigned long long int SEED_B;
@@ -46,24 +43,16 @@ void reset_seed(void) {
 	SEED_D  = seed4;
 }
 
-
-#ifdef DEBUG_MEMTEST
-	/*  Allows to visualize which test return the error, the faulty address and the difference between the expected value and the one read */
-	void mtest_debug(uint test_num, uint balise, vu_long adr, vu_long value) {
-		debug ("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, balise, adr, value);
-	}
-#endif
-
 /*
 Test 1 [Address test, 8bits walking ones]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running */
-ulong addr_tst1(vu_long start, vu_long end) {
+ulong __attribute__((optimize("O0")))addr_tst1(vu_long start, vu_long end) {
 	unsigned char i, mask, *p, *pe;
 	ulong errs = 0;
 	int test_num = 1;
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		uint err_position;
 		err_position = (end - start)/2; /* error position is half way of the tested segment */
 #endif
@@ -73,15 +62,16 @@ ulong addr_tst1(vu_long start, vu_long end) {
 	pe = (unsigned char *)end;
 	/* test each bit for all address */
 	for (; p < pe; p++) {
+		debug( "TEST number: %d, balise: %d, Address: %08lx, Value: %08x\n", test_num, 0, (vu_long)p, *p);
 		for (i = 0; i<8; i++) {
 			mask = 1<<i;
 			*p &= mask;
 			*p |= mask;
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 			if (p == (unsigned char *)(start + err_position) && (i==0)) {
 				*p = ~*p;
 			}
-			/*mtest_debug(test_num, 0, (vu_long)p, *p);*/
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08x\n", test_num, 0, (vu_long)p, *p);
 #endif
 			if(*p != mask) {
 				printf ("ERROR TEST number: %d, Faulty address: %08lx, Expected result: %08x, Obtained value: %08lx\n", test_num, (vu_long)p, mask, (vu_long)*p);
@@ -97,7 +87,7 @@ Test 2 [Address test, own address pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running */
-ulong addr_tst2(vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))addr_tst2(vu_long start, vu_long end)
 {
 	vu_long *p, *pe;
 	ulong errs = 0;
@@ -106,7 +96,7 @@ ulong addr_tst2(vu_long start, vu_long end)
 	if (verify_length(start, end, 8)) {
 		return(errs);
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 			ulong err_position;
 			err_position = (end - start)/2; /* error position is half way of the tested segment */
 			while (err_position%8){
@@ -121,14 +111,14 @@ ulong addr_tst2(vu_long start, vu_long end)
 	for (; p < pe; p++) {
 		*p = (vu_long)p;
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
 		pe = (vu_long*)end;
 		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position)) {
 				*p = ~*p;
 			}
-			/*mtest_debug(test_num, 0, (vu_long)p, *p);*/
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, 0, (vu_long)p, *p);
 		}
 #endif
 	/* Each address should have its own address */
@@ -150,7 +140,7 @@ Test 3 [Moving inversion, pattern of all Ones & Zeros]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-ulong movinv (int iter, vu_long pattern, vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern, vu_long start, vu_long end)
 {
 	int i, test_num = 3;
 	ulong errs = 0;
@@ -159,7 +149,7 @@ ulong movinv (int iter, vu_long pattern, vu_long start, vu_long end)
 	if (verify_length(start, end, 8)) {
 		return(errs);
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		ulong err_position;
 		err_position = (end - start)/2; /* error position is half way of the tested segment */
 		while (err_position%8){
@@ -173,14 +163,14 @@ ulong movinv (int iter, vu_long pattern, vu_long start, vu_long end)
 		*p = pattern;
 	}
 	
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
 		pe = (vu_long*)end;
 		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position))	{
 				*p = ~*p;
 			}
-			/*mtest_debug(test_num, 0, (vu_long)p, *p);*/
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, 0, (vu_long)p, *p);
 		}
 #endif
 	/* Do moving inversions test. Check for initial pattern and then
@@ -196,9 +186,7 @@ ulong movinv (int iter, vu_long pattern, vu_long start, vu_long end)
 				errs ++;
 			}
 			*p = ~pattern;
-#ifdef DEBUG_MEMTEST
-		/*mtest_debug(test_num, i+1, (vu_long)p, *p);*/
-#endif
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, i+1, (vu_long)p, *p);
 		}
 		p = (vu_long*)(end-sizeof(vu_long));
 		pe = (vu_long*)start;
@@ -220,13 +208,13 @@ Test 4 [Moving inversion, 8bits wide pattern of all Ones & Zeros]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-ulong movinv_8bit (int iter, unsigned char pattern, vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))movinv_8bit(int iter, unsigned char pattern, vu_long start, vu_long end)
 {
 	int test_num = 4;
 	unsigned char *p, *pe, i;
 	unsigned char p2 = ~pattern;
 	ulong errs = 0;
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 			ulong err_position;
 			err_position = (end - start)/2; /* error position is half way of the tested segment */
 #endif
@@ -236,14 +224,14 @@ ulong movinv_8bit (int iter, unsigned char pattern, vu_long start, vu_long end)
 	for (; p < pe; p++) {
 		*p = pattern;
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		p = (unsigned char*)start;
 		pe = (unsigned char*)end;
 		for (; p < pe; p++) {		
 			if (p == (unsigned char *)(start + err_position)) {
 				*p = ~*p;
 			}
-			/*mtest_debug(test_num, 0, (vu_long)p, *p);*/
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08x\n", test_num, 0, (vu_long)p, *p);
 		}
 #endif
 	/* Do moving inversions test. Check for initial pattern and then
@@ -258,9 +246,7 @@ ulong movinv_8bit (int iter, unsigned char pattern, vu_long start, vu_long end)
 				errs ++;
 			}
 			*p = p2;
-#ifdef DEBUG_MEMTEST
-		/*mtest_debug(test_num, i+1, (vu_long)p, *p);*/
-#endif
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08x\n", test_num, i+1, (vu_long)p, *p);
 		}
 		p = (unsigned char*)(end-sizeof(unsigned char));
 		pe = (unsigned char*)start;
@@ -281,7 +267,7 @@ Test 5 [Moving inversion, random pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-ulong movinvr (int iter, vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start, vu_long end)
 {
 	int i;
 	int test_num = 5;
@@ -291,7 +277,7 @@ ulong movinvr (int iter, vu_long start, vu_long end)
 	if (verify_length(start, end, 8)) {
 		return(errs);
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		ulong err_position;
 		err_position = (end - start)/2; /* error position is half way of the tested segment */
 		while (err_position%8){
@@ -309,14 +295,14 @@ ulong movinvr (int iter, vu_long start, vu_long end)
 	for (; p < pe; p++) {
 		*p = p1;
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
 		pe = (vu_long*)end;
 		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position)) {
 				*p = ~*p;
 			}
-			/*mtest_debug(test_num, 0, (vu_long)p, *p);*/
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, 0, (vu_long)p, *p);
 		}
 #endif
 
@@ -333,9 +319,7 @@ ulong movinvr (int iter, vu_long start, vu_long end)
 				errs ++;
 			}
 			*p = ~p1;
-#ifdef DEBUG_MEMTEST
-		/*mtest_debug(test_num, i+1,(vu_long)p, *p);*/
-#endif
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, i+1,(vu_long)p, *p);
 		}
 		pe = (vu_long*)start;
 		p = (vu_long*)(end-sizeof(vu_long));
@@ -345,9 +329,7 @@ ulong movinvr (int iter, vu_long start, vu_long end)
 				errs ++;
 			}
 			*p = p1;
-#ifdef DEBUG_MEMTEST
-		/*mtest_debug(test_num, iter+i+1,(vu_long)p, *p);*/
-#endif
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, iter+i+1,(vu_long)p, *p);
 		} while (--p >= pe);
 	}
 	return(errs);
@@ -358,7 +340,7 @@ Test 6 [block_move, random pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-ulong move_block(vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))move_block(vu_long start, vu_long end)
 {
 	vu_long length, mask = 0x80000000, i;
 	ulong errs = 0;
@@ -384,7 +366,7 @@ ulong move_block(vu_long start, vu_long end)
 	if (verify_length(start, end, 128)) {
 		return(errs);
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		ulong err_position;
 		err_position = (end - start)/4; /* error position is quarter-way of the segment*/
 		while (err_position%8){
@@ -422,26 +404,21 @@ ulong move_block(vu_long start, vu_long end)
 	/* Move last 8 DWORDS (32-bytes) of the second half to the start of the first half */
 	memcpy((void*) (start), (void*) (end - 32), 32);
 
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 	for (i=start; i < end; i+=4) {
 		p1 =(uint*)i;
 		if ((p1 == (uint*)(start + err_position))) {
 			*p1 = 0;
 		}
-		/*mtest_debug(test_num, 0, (vu_long)p1, *p1);
-		printf ("addr p1: %08lx, value p1: %08x\n",i, *p1); */
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08x\n", test_num, 0, (vu_long)p1, *p1);
 	}
 #endif
 
 	for (i=start; i < end; i+=8) {
 		p1 =(uint*)i;
 		p2 = (uint*)(i+4);
-		
-#ifdef DEBUG_MEMTEST
-		/*printf ("addr p1: %08lx, value p1: %08x, addr p2: %08lx, value p2: %08x\n",i, *p1, i+4, *p2); 
-		mtest_debug(test_num, 1, (vu_long)p1, *p1);
-		mtest_debug(test_num, 2, (vu_long)p2, *p2);*/
-#endif		
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08x\n", test_num, 1, (vu_long)p1, *p1);
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08x\n", test_num, 2, (vu_long)p2, *p2);
 		if (*p1!=*p2) {
 			printf ("ERROR TEST number: %d, Faulty address: %08lx, Expected result: %08x, Obtained value: %08x\n", test_num, (vu_long)p1, *p1, *p2);
 			errs ++;
@@ -456,7 +433,7 @@ Test 7 [Moving inversion, 64 bits shifting pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-ulong movinv64(vu_long pattern, vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))movinv64(vu_long pattern, vu_long start, vu_long end)
 {
 	int k=0;
 	vu_long *p, *pe, pat, comp_pat;
@@ -469,7 +446,7 @@ ulong movinv64(vu_long pattern, vu_long start, vu_long end)
 		return(errs);
 	}
 	
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		ulong err_position;
 		err_position = (end - start)/2; /* error position is half way of the tested segment */
 		while (err_position%8){
@@ -501,14 +478,14 @@ ulong movinv64(vu_long pattern, vu_long start, vu_long end)
 		}
 		p++;
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
 		pe = (vu_long*)end;
 		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position)) {
 				*p = ~*p;
 			}
-			//mtest_debug(test_num, 0, (vu_long)p, *p);
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, 0, (vu_long)p, *p);
 		}
 #endif
 
@@ -526,9 +503,7 @@ ulong movinv64(vu_long pattern, vu_long start, vu_long end)
 		}
 		comp_pat = ~pat;
 		*p = comp_pat;
-#ifdef DEBUG_MEMTEST
-		/*mtest_debug(test_num, 1,(vu_long)p, *p);*/
-#endif
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, 1,(vu_long)p, *p);
 		p++;
 		if (p >= pe) {
 			break;
@@ -547,9 +522,7 @@ ulong movinv64(vu_long pattern, vu_long start, vu_long end)
 			errs ++;
 		}
 		*p = pat;
-#ifdef DEBUG_MEMTEST
-		/*mtest_debug(test_num, 2,(vu_long)p, *p);*/
-#endif
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, 2,(vu_long)p, *p);
 		if (p <= pe) {
 			break;
 		}
@@ -567,7 +540,7 @@ Test 8 [Half moving inversion, random sequence pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-ulong rand_seq(unsigned char iter_rand, vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand, vu_long start, vu_long end)
 {
 	int i;
 	vu_long *p, *pe, num;
@@ -577,7 +550,7 @@ ulong rand_seq(unsigned char iter_rand, vu_long start, vu_long end)
 	if (verify_length(start, end, 8)) {
 		return(errs);
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		ulong err_position;
 		err_position = (end - start)/2; /* error position is half way of the tested segment */
 		while (err_position%8){
@@ -592,14 +565,14 @@ ulong rand_seq(unsigned char iter_rand, vu_long start, vu_long end)
 	for (; p < pe; p++) {
 		*p = rand1(iter_rand);
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
 		pe = (vu_long*)end;
 		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position)) {
 				*p = ~*p;
 			}
-			/*mtest_debug(test_num, 0, (vu_long)p, *p);*/
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, 0, (vu_long)p, *p);
 		}
 #endif
 	/* Do moving inversions test. Check for initial pattern and then
@@ -618,9 +591,7 @@ ulong rand_seq(unsigned char iter_rand, vu_long start, vu_long end)
 				errs ++;
 			}
 			*p = ~num;
-#ifdef DEBUG_MEMTEST
-		/*mtest_debug(test_num, i+1, (vu_long)p, *p);*/
-#endif
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, i+1, (vu_long)p, *p);
 		}
 	}
 	return(errs);
@@ -632,7 +603,7 @@ Test 9 [modulo 20, random pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-ulong modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start, vu_long end)
 {
 	int k, i;
 	int test_num = 9; 
@@ -643,7 +614,7 @@ ulong modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start, vu_lon
 	if (verify_length(start, end, 8)) {
 		return(errs);
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		ulong err_position;
 		err_position = start + offset*8 + MOD_SZ*8  ; /* error position is at the second modulo */
 #endif
@@ -652,7 +623,7 @@ ulong modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start, vu_lon
 	pe = (vu_long*)(end-MOD_SZ);/* adjust the ending address */
 	for (; p < pe; p += MOD_SZ) {
 		*p = p1;
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		if (p == (vu_long*)err_position) {
 			*p = ~p1;
 		}
@@ -672,20 +643,18 @@ ulong modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start, vu_lon
 				k = 0;
 			}
 		}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
 		pe = (vu_long*)end;
 		for (; p < pe; p++) {
-			/*mtest_debug(test_num, i, (vu_long)p, *p);*/
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, i, (vu_long)p, *p);
 		}
 #endif
 	}
 	p = (vu_long*)start + offset;
 	pe = (vu_long*)(end - MOD_SZ);
 	for (; p < pe; p += MOD_SZ) {
-#ifdef DEBUG_MEMTEST
-		/*mtest_debug(test_num, iter, (vu_long)p, *p);*/
-#endif	
+		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, iter, (vu_long)p, *p);
 		if (*p != p1) {
 			printf ("ERROR TEST number: %d, Faulty address: %08lx, Expected result: %08lx, Obtained value: %08lx\n", test_num, (vu_long)p, p1, *p);
 			errs ++;
@@ -699,19 +668,16 @@ Test 10(0xA) part fill - [bit fade, 64bits pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-ulong bit_fade_fill(vu_long pattern, vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))bit_fade_fill(vu_long pattern, vu_long start, vu_long end)
 {
 	vu_long *p, *pe;
 	ulong errs = 0;
 	
-#ifdef DEBUG_MEMTEST
-	/*int test_num = 10;*/
-#endif
 	/* Function should be used with multiple of 8bits length*/
 	if (verify_length(start, end, 8)) {
 		return(errs);
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		ulong err_position;
 		err_position = (end - start)/2; /* error position is half way of the tested segment */
 		while (err_position%8){
@@ -726,7 +692,7 @@ ulong bit_fade_fill(vu_long pattern, vu_long start, vu_long end)
 	for (;p < pe ;p++) {
 		*p = pattern;
 	}
-#ifdef DEBUG_MEMTEST
+#ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
 		pe = (vu_long*)end;
 		for (; p < pe; p++) 
@@ -734,7 +700,7 @@ ulong bit_fade_fill(vu_long pattern, vu_long start, vu_long end)
 			if (p == (vu_long *)(start + err_position)) {
 				*p = ~*p;
 			}
-			/*mtest_debug(test_num, 0, (vu_long)p, *p);*/
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", 10, 0, (vu_long)p, *p);
 		}
 #endif
 	return(errs);
@@ -745,7 +711,7 @@ Test 10(0xA) fade part - [bit fade, 64bits pattern]
 	start: Starting address of the test
 	end  : Ending address of the test
 	stop_after_err: "1" stop the test after an error / "0" let the test running*/
-ulong bit_fade_chk(vu_long pattern, vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))bit_fade_chk(vu_long pattern, vu_long start, vu_long end)
 {
 	vu_long *p, *pe;
 	ulong errs = 0;
@@ -776,5 +742,3 @@ void wait (unsigned int sec)
 	}
 	return;
 }
-
-#pragma GCC pop_options

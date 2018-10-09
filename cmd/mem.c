@@ -9,7 +9,7 @@
  *
  * Copied from FADS ROM, Dan Malek (dmalek@jlc.net)
  */
-
+ 
 #include <common.h>
 #include <console.h>
 #include <bootretry.h>
@@ -597,7 +597,7 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr, ulong 
 	printf("addr_tst1 start = %08lx, end = %08lx, number of iteration = %0lu\n", start_addr, end_addr, iterations);
 	errs = addr_tst1(start_addr, end_addr);
 	WATCHDOG_RESET();
-
+	
 	printf("addr_tst2: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
 	errs += addr_tst2(start_addr, end_addr);
 	WATCHDOG_RESET();

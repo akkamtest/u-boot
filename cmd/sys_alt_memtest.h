@@ -26,7 +26,6 @@
 unsigned char verify_length(vu_long start, vu_long end, uint size_of_pt);
 unsigned long long int rand1 (ulong salt);
 void reset_seed(void);
-void mtest_debug(uint test_num, uint balise, vu_long adr, vu_long value);
 ulong addr_tst1(vu_long start, vu_long end);
 ulong addr_tst2(vu_long start, vu_long end);
 ulong movinv (int iter, vu_long pattern, vu_long start, vu_long end);
