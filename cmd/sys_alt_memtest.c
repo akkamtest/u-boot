@@ -3,6 +3,7 @@
 /*Uncomment to generate errors*/
 /*#define DEBUG_ADD_ERR*/
 #include <common.h>
+#include <console.h>
 #include "sys_alt_memtest.h"
 
 static unsigned long long int SEED_A;
@@ -67,6 +68,8 @@ ulong __attribute__((optimize("O0")))addr_tst1(vu_long start, vu_long end) {
 			mask = 1<<i;
 			*p &= mask;
 			*p |= mask;
+			if (ctrlc())
+				return -1;
 #ifdef DEBUG_ADD_ERR
 			if (p == (unsigned char *)(start + err_position) && (i==0)) {
 				*p = ~*p;
@@ -110,11 +113,15 @@ ulong __attribute__((optimize("O0")))addr_tst2(vu_long start, vu_long end)
 	/* Write each address with it's own address */	
 	for (; p < pe; p++) {
 		*p = (vu_long)p;
+		if (ctrlc())
+			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
 		pe = (vu_long*)end;
 		for (; p < pe; p++) {
+			if (ctrlc())
+				return -1;
 			if (p == (vu_long *)(start + err_position)) {
 				*p = ~*p;
 			}
@@ -126,6 +133,8 @@ ulong __attribute__((optimize("O0")))addr_tst2(vu_long start, vu_long end)
 	pe = (vu_long *)end;
 	for (; p < pe; p++) 
 	{
+		if (ctrlc())
+			return -1;
 		if(*p != (vu_long)p) {
 			printf ("ERROR TEST number: %d, Faulty address: %08lx, Expected result: %08lx, Obtained value: %08lx\n", test_num, (vu_long)p, (vu_long)p, *p);
 			errs ++;
@@ -161,6 +170,8 @@ ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern, vu_long s
 	/* Initialize memory with the initial pattern.  */
 	for (; p < pe; p++) {
 		*p = pattern;
+		if (ctrlc())
+			return -1;
 	}
 	
 #ifdef DEBUG_ADD_ERR
@@ -169,6 +180,8 @@ ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern, vu_long s
 		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position))	{
 				*p = ~*p;
+				if (ctrlc())
+					return -1;
 			}
 			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, 0, (vu_long)p, *p);
 		}
@@ -186,6 +199,8 @@ ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern, vu_long s
 				errs ++;
 			}
 			*p = ~pattern;
+			if (ctrlc())
+				return -1;
 		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, i+1, (vu_long)p, *p);
 		}
 		p = (vu_long*)(end-sizeof(vu_long));
@@ -197,6 +212,8 @@ ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern, vu_long s
 				errs ++;
 			}
 			*p = pattern;
+			if (ctrlc())
+				return -1;
 		} while (--p >= pe);
 	}
 	return(errs);
@@ -223,14 +240,18 @@ ulong __attribute__((optimize("O0")))movinv_8bit(int iter, unsigned char pattern
 	/* Initialize memory with the initial pattern.  */
 	for (; p < pe; p++) {
 		*p = pattern;
+		if (ctrlc())
+			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
 		p = (unsigned char*)start;
 		pe = (unsigned char*)end;
-		for (; p < pe; p++) {		
+		for (; p < pe; p++) {
 			if (p == (unsigned char *)(start + err_position)) {
 				*p = ~*p;
 			}
+			if (ctrlc())
+				return -1;
 			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08x\n", test_num, 0, (vu_long)p, *p);
 		}
 #endif
@@ -246,7 +267,9 @@ ulong __attribute__((optimize("O0")))movinv_8bit(int iter, unsigned char pattern
 				errs ++;
 			}
 			*p = p2;
-		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08x\n", test_num, i+1, (vu_long)p, *p);
+			if (ctrlc())
+				return -1;
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08x\n", test_num, i+1, (vu_long)p, *p);
 		}
 		p = (unsigned char*)(end-sizeof(unsigned char));
 		pe = (unsigned char*)start;
@@ -256,6 +279,8 @@ ulong __attribute__((optimize("O0")))movinv_8bit(int iter, unsigned char pattern
 				errs ++;
 			}
 			*p = pattern;
+			if (ctrlc())
+				return -1;
 		} while (--p >= pe);
 	}
 	return(errs);
@@ -294,6 +319,8 @@ ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start, vu_long en
 	/* Initialize memory with the initial pattern */
 	for (; p < pe; p++) {
 		*p = p1;
+		if (ctrlc())
+			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
@@ -319,7 +346,9 @@ ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start, vu_long en
 				errs ++;
 			}
 			*p = ~p1;
-		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, i+1,(vu_long)p, *p);
+			if (ctrlc())
+			return -1;
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, i+1,(vu_long)p, *p);
 		}
 		pe = (vu_long*)start;
 		p = (vu_long*)(end-sizeof(vu_long));
@@ -329,7 +358,9 @@ ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start, vu_long en
 				errs ++;
 			}
 			*p = p1;
-		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, iter+i+1,(vu_long)p, *p);
+			if (ctrlc())
+				return -1;
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, iter+i+1,(vu_long)p, *p);
 		} while (--p >= pe);
 	}
 	return(errs);
@@ -391,6 +422,8 @@ ulong __attribute__((optimize("O0")))move_block(vu_long start, vu_long end)
 				tab[j] = tab[j]<<1;
 			}
 		}
+		if (ctrlc())
+			return -1;
 	}
 	/*
 		At the end of all this 
@@ -423,6 +456,8 @@ ulong __attribute__((optimize("O0")))move_block(vu_long start, vu_long end)
 			printf ("ERROR TEST number: %d, Faulty address: %08lx, Expected result: %08x, Obtained value: %08x\n", test_num, (vu_long)p1, *p1, *p2);
 			errs ++;
 		}
+		if (ctrlc())
+			return -1;
 	}
 	return(errs);
 }
@@ -477,6 +512,8 @@ ulong __attribute__((optimize("O0")))movinv64(vu_long pattern, vu_long start, vu
 			pat = pat << 1;
 		}
 		p++;
+		if (ctrlc())
+			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
@@ -505,6 +542,8 @@ ulong __attribute__((optimize("O0")))movinv64(vu_long pattern, vu_long start, vu
 		*p = comp_pat;
 		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, 1,(vu_long)p, *p);
 		p++;
+		if (ctrlc())
+			return -1;
 		if (p >= pe) {
 			break;
 		}
@@ -564,6 +603,8 @@ ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand, vu_long s
 	
 	for (; p < pe; p++) {
 		*p = rand1(iter_rand);
+		if (ctrlc())
+			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
@@ -572,6 +613,8 @@ ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand, vu_long s
 			if (p == (vu_long *)(start + err_position)) {
 				*p = ~*p;
 			}
+			if (ctrlc())
+			return -1;
 			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, 0, (vu_long)p, *p);
 		}
 #endif
@@ -591,7 +634,9 @@ ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand, vu_long s
 				errs ++;
 			}
 			*p = ~num;
-		debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, i+1, (vu_long)p, *p);
+			if (ctrlc())
+				return -1;
+			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", test_num, i+1, (vu_long)p, *p);
 		}
 	}
 	return(errs);
@@ -623,6 +668,8 @@ ulong __attribute__((optimize("O0")))modtst(int offset, int iter, vu_long p1, vu
 	pe = (vu_long*)(end-MOD_SZ);/* adjust the ending address */
 	for (; p < pe; p += MOD_SZ) {
 		*p = p1;
+		if (ctrlc())
+			return -1;
 #ifdef DEBUG_ADD_ERR
 		if (p == (vu_long*)err_position) {
 			*p = ~p1;
@@ -642,6 +689,8 @@ ulong __attribute__((optimize("O0")))modtst(int offset, int iter, vu_long p1, vu
 			if (++k > MOD_SZ-1) {
 				k = 0;
 			}
+			if (ctrlc())
+			return -1;
 		}
 #ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
@@ -659,6 +708,8 @@ ulong __attribute__((optimize("O0")))modtst(int offset, int iter, vu_long p1, vu
 			printf ("ERROR TEST number: %d, Faulty address: %08lx, Expected result: %08lx, Obtained value: %08lx\n", test_num, (vu_long)p, p1, *p);
 			errs ++;
 		}
+		if (ctrlc())
+			return -1;
 	}
 	return(errs);
 }
@@ -691,6 +742,8 @@ ulong __attribute__((optimize("O0")))bit_fade_fill(vu_long pattern, vu_long star
 	/* Initialize memory with the initial pattern. */
 	for (;p < pe ;p++) {
 		*p = pattern;
+		if (ctrlc())
+			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
 		p = (vu_long*)start;
@@ -700,6 +753,8 @@ ulong __attribute__((optimize("O0")))bit_fade_fill(vu_long pattern, vu_long star
 			if (p == (vu_long *)(start + err_position)) {
 				*p = ~*p;
 			}
+			if (ctrlc())
+				return -1;
 			debug("TEST number: %d, balise: %d, Address: %08lx, Value: %08lx\n", 10, 0, (vu_long)p, *p);
 		}
 #endif
@@ -729,16 +784,20 @@ ulong __attribute__((optimize("O0")))bit_fade_chk(vu_long pattern, vu_long start
 			printf ("ERROR TEST number: %d, Faulty address: %08lx, Expected result: %08lx, Obtained value: %08lx\n", test_num, (vu_long)p, pattern, *p);
 			errs ++;
 		}
+		if (ctrlc())
+			return -1;
 	}
 	return(errs);
 }
 
-void wait (unsigned int sec)
+ulong wait (unsigned int sec)
 {
 	vu_long t, wait;
 	wait = 50000 * sec;
 	for ( t = 1; t <= wait; t++) {
 		asm("nop");
+		if (ctrlc())
+			return -1;
 	}
-	return;
+	return 0;
 }

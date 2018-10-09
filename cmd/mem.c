@@ -9,7 +9,7 @@
  *
  * Copied from FADS ROM, Dan Malek (dmalek@jlc.net)
  */
- 
+
 #include <common.h>
 #include <console.h>
 #include <bootretry.h>
@@ -576,72 +576,115 @@ static int do_mem_loopw(cmd_tbl_t *cmdtp, int flag, int argc,
 static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr, ulong end_addr,
 			  ulong iterations)
 {
-	ulong errs = 0;
+	static ulong errs = 0;
 	ulong length;
-	vu_long *addr;
-	
-	addr = buf;
+	vu_long start, end;
+
 	length = end_addr - start_addr;
-	start_addr = (ulong)addr;
-	end_addr = start_addr + length;
-	printf("Testing memory area from %08lx to %08lx:\n", start_addr, end_addr);
-	
-	
+	end = (vu_long)buf + length;
+	start = (vu_long)buf;
+	printf("Testing memory area from %08lx to %08lx:\n", start, end);
+
 /* Disable and flush cache */
-#ifdef CONFIG_CMD_CACHE	
+#ifdef CONFIG_CMD_CACHE
 	icache_disable();
 	flush_dcache_all();
 	dcache_disable();
 #endif
-	
-	printf("addr_tst1 start = %08lx, end = %08lx, number of iteration = %0lu\n", start_addr, end_addr, iterations);
-	errs = addr_tst1(start_addr, end_addr);
-	WATCHDOG_RESET();
-	
-	printf("addr_tst2: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
-	errs += addr_tst2(start_addr, end_addr);
-	WATCHDOG_RESET();
 
-	printf("movinv: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
-	errs += movinv (MEMTEST_ITERATION, pattern1, start_addr, end_addr);
+	printf("addr_tst1 start = %08lx, end = %08lx, number of iteration = %0lu\n"
+	, start_addr, end_addr, iterations);
+	errs = addr_tst1(start, end);
 	WATCHDOG_RESET();
+	if (errs < 0)
+		return -1UL;
 
-	printf("movinv_8bit: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
-	errs += movinv_8bit (MEMTEST_ITERATION,  (unsigned char)pattern1, start_addr, end_addr);
+	printf("addr_tst2: start = %08lx, end = %08lx, number of iteration = %lu\n"
+	, start_addr, end_addr, iterations);
+	errs += addr_tst2(start, end);
+	WATCHDOG_RESET();
+	if (errs < 0)
+		return -1UL;
 
-	printf("movinvr: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
-	errs += movinvr (MEMTEST_ITERATION, start_addr, end_addr);
+	printf("movinv: start = %08lx, end = %08lx, number of iteration = %lu\n"
+	, start_addr, end_addr, iterations);
+	errs += movinv (MEMTEST_ITERATION, pattern1, start, end);
 	WATCHDOG_RESET();
+	if (errs < 0)
+		return -1UL;
 
-	printf("move_block start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
-	errs += move_block(start_addr, end_addr);
+	printf("movinv_8bit: start = %08lx, end = %08lx, number of iteration = %lu\n"
+	, start_addr, end_addr, iterations);
+	errs += movinv_8bit (MEMTEST_ITERATION,  (unsigned char)pattern1, start, end);
 	WATCHDOG_RESET();
-	
-	printf("movinv64: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
-	errs += movinv64(pattern1, start_addr, end_addr);
-	WATCHDOG_RESET();
+	if (errs < 0)
+		return -1UL;
 
-	printf("rand_seq: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
-	errs += rand_seq(iterations, start_addr, end_addr);
+	printf("movinvr: start = %08lx, end = %08lx, number of iteration = %lu\n"
+	, start_addr, end_addr, iterations);
+	errs += movinvr (MEMTEST_ITERATION, start, end);
+	WATCHDOG_RESET();
+	if (errs < 0)
+		return -1UL;
 
-	printf("modtst: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
-	errs += modtst(MEMTEST_MOD_OFFSET, MEMTEST_ITERATION, pattern1, ~pattern1, start_addr, end_addr);
+	printf("move_block start = %08lx, end = %08lx, number of iteration = %lu\n"
+	, start_addr, end_addr, iterations);
+	errs += move_block(start, end);
 	WATCHDOG_RESET();
+	if (errs < 0)
+		return -1UL;
 
-	printf("bit_fade: start = %08lx, end = %08lx, number of iteration = %lu\n", start_addr, end_addr, iterations);
-	errs+=bit_fade_fill(pattern1, start_addr, end_addr);
+	printf("movinv64: start = %08lx, end = %08lx, number of iteration = %lu\n"
+	, start_addr, end_addr, iterations);
+	errs += movinv64(pattern1, start, end);
 	WATCHDOG_RESET();
-	wait(2);
-	errs += bit_fade_chk(pattern1, start_addr, end_addr);
+	if (errs < 0)
+		return -1UL;
+
+	printf("rand_seq: start = %08lx, end = %08lx, number of iteration = %lu\n"
+	, start_addr, end_addr, iterations);
+	errs += rand_seq(iterations, start, end);
 	WATCHDOG_RESET();
-	errs+=bit_fade_fill(~pattern1, start_addr, end_addr);
+	if (errs < 0)
+		return -1UL;
+
+	printf("modtst: start = %08lx, end = %08lx, number of iteration = %lu\n"
+	, start_addr, end_addr, iterations);
+	errs += modtst(MEMTEST_MOD_OFFSET, MEMTEST_ITERATION, pattern1, ~pattern1, start, end);
 	WATCHDOG_RESET();
-	wait(2);
-	errs += bit_fade_chk(~pattern1, start_addr, end_addr);
+	if (errs < 0)
+		return -1UL;
+
+	printf("bit_fade: start = %08lx, end = %08lx, number of iteration = %lu\n"
+	, start_addr, end_addr, iterations);
+	errs+=bit_fade_fill(pattern1, start, end);
+	if (errs < 0)
+		return -1UL;
+
+	errs += wait(2000);
+	if (errs < 0)
+		return -1UL;
+
+	errs += bit_fade_chk(pattern1, start, end);
 	WATCHDOG_RESET();
+	if (errs < 0)
+		return -1UL;
+
+	errs+=bit_fade_fill(~pattern1, start, end);
+	if (errs < 0)
+		return -1UL;
+
+	errs += wait(2000);
+	if (errs < 0)
+		return -1UL;
+
+	errs += bit_fade_chk(~pattern1, start, end);
+	WATCHDOG_RESET();
+	if (errs < 0)
+		return -1UL;
 
 /* Enable cache */
-#ifdef CONFIG_CMD_CACHE	
+#ifdef CONFIG_CMD_CACHE
 	icache_enable();
 	dcache_enable();
 #endif
