@@ -614,7 +614,8 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr
 		return -1UL;
 
 	printf("movinv_8bit\n");
-	errs += movinv_8bit(MEMTEST_ITERATION, (unsigned char)pattern1, start, end);
+	errs += movinv_8bit(MEMTEST_ITERATION, (unsigned char)pattern1
+	, start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
@@ -644,14 +645,15 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr
 		return -1UL;
 
 	printf("modtst\n");
-	errs += modtst(MEMTEST_MOD_OFFSET, MEMTEST_ITERATION, pattern1, ~pattern1
+	errs += modtst(MEMTEST_MOD_OFFSET, MEMTEST_ITERATION,
+				pattern1, ~pattern1
 				, start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
 
 	printf("bit_fade\n");
-	errs +=bit_fade_fill(pattern1, start, end);
+	errs += bit_fade_fill(pattern1, start, end);
 	if (errs < 0)
 		return -1UL;
 
@@ -664,7 +666,7 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr
 	if (errs < 0)
 		return -1UL;
 
-	errs +=bit_fade_fill(~pattern1, start, end);
+	errs += bit_fade_fill(~pattern1, start, end);
 	if (errs < 0)
 		return -1UL;
 
@@ -835,8 +837,8 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 		putc('\n');
 		ret = 1;
 	} else {
-		printf("Tested %d iteration(s) with %lu errors.\n"
-			  , iteration, errs);
+		printf("Tested %d iteration(s) with %lu errors.\n",
+			  iteration, errs);
 		ret = errs != 0;
 	}
 
