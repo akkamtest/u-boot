@@ -28,13 +28,13 @@ unsigned long long int rand1(ulong salt)
 {
 	static unsigned int a = 18000, b = 30903, c = 15333, d = 21041;
 
-	SEED_A  = salt*a*(SEED_A &65535) + (SEED_A >>16);
-	SEED_B  = salt*b*(SEED_B &65535) + (SEED_B >>16);
-	SEED_C  = salt*c*(SEED_C &65535) + (SEED_C >>16);
-	SEED_D  = salt*d*(SEED_D &65535) + (SEED_D >>16);
+	SEED_A  = salt * a * (SEED_A & 65535) + (SEED_A >> 16);
+	SEED_B  = salt * b * (SEED_B & 65535) + (SEED_B >> 16);
+	SEED_C  = salt * c * (SEED_C & 65535) + (SEED_C >> 16);
+	SEED_D  = salt * d * (SEED_D & 65535) + (SEED_D >> 16);
 
-	return ((SEED_A <<48) + ((SEED_B &65535)<<32)
-		   + (SEED_C <<16) + (SEED_D &65535));
+	return ((SEED_A << 48) + ((SEED_B & 65535) << 32)
+		   + (SEED_C << 16) + (SEED_D & 65535));
 }
 
 void reset_seed(void)
@@ -67,18 +67,17 @@ ulong __attribute__((optimize("O0")))addr_tst1(vu_long start, vu_long end)
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		uint err_position;
-		err_position = (end - start)/2;
+		err_position = (end - start) / 2;
 #endif
 	/* Initialise tested memory range */
 	p = (unsigned char *)start;
 	pe = (unsigned char *)end;
 	/* test each bit for all address */
 	for (; p < pe; p++) {
-		debug("TEST number: %d, balise: %d, "
-		"Address: %08lx, Value: %08x\n",
+		debug("TN: %d, B: %d, Addr: %08lx, Val: %08x\n",
 			test_num, 0, (vu_long)p, *p);
-		for (i = 0; i<8; i++) {
-			mask = 1<<i;
+		for (i = 0; i < 8; i++) {
+			mask = 1 << i;
 			*p &= mask;
 			*p |= mask;
 			if (ctrlc())
@@ -86,14 +85,12 @@ ulong __attribute__((optimize("O0")))addr_tst1(vu_long start, vu_long end)
 #ifdef DEBUG_ADD_ERR
 			if (p == (unsigned char *)(start + err_position) && i == 0) 
 				*p = ~*p;
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08x\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08x\n",
 				test_num, 0, (vu_long)p, *p);
 #endif
 			if(*p != mask) {
-				printf("ERROR TEST number: %d, Faulty address: %08lx, "
-					"Expected result: %08x, Obtained value: %08lx\n",
-					test_num, (vu_long)p, mask, (vu_long)*p);
+				printf("Mem error @: %08lx, expected: %08x, found: %08lx\n",
+						(vu_long)p, mask, (vu_long)*p);
 				errs++;
 			}
 		}
@@ -107,11 +104,10 @@ ulong __attribute__((optimize("O0")))addr_tst1(vu_long start, vu_long end)
  * end  : Ending address of the test
 */
 ulong __attribute__((optimize("O0")))addr_tst2(vu_long start,
-										vu_long end)
+											   vu_long end)
 {
 	vu_long *p, *pe;
 	ulong errs = 0;
-	int test_num = 2;
 	/* Function should be used with multiple of 8 bytes length*/
 	if (verify_length(start, end, sizeof(*p)))
 		return errs;
@@ -119,12 +115,12 @@ ulong __attribute__((optimize("O0")))addr_tst2(vu_long start,
 			/* error position is half way of the tested segment */
 			ulong err_position;
 			err_position = (end - start)/2;
-			while (err_position%8)
+			while (err_position % 8)
 				err_position--;
 #endif
 	/* Initialise tested memory range */
-	p = (vu_long*)start;
-	pe = (vu_long*)end;
+	p = (vu_long *)start;
+	pe = (vu_long *)end;
 	
 	/* Write each address with it's own address */
 	for (; p < pe; p++) {
@@ -133,15 +129,15 @@ ulong __attribute__((optimize("O0")))addr_tst2(vu_long start,
 			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+		int test_num = 2;
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		for (; p < pe; p++) {
 			if (ctrlc())
 				return -1;
 			if (p == (vu_long *)(start + err_position))
 				*p = ~*p;
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08lx\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 				test_num, 0, (vu_long)p, *p);
 		}
 #endif
@@ -153,9 +149,8 @@ ulong __attribute__((optimize("O0")))addr_tst2(vu_long start,
 		if (ctrlc())
 			return -1;
 		if(*p != (vu_long)p) {
-			printf("ERROR TEST number: %d, Faulty address: %08lx, "
-				"Expected result: %08lx, Obtained value: %08lx\n",
-				test_num, (vu_long)p, (vu_long)p, *p);
+			printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
+					(vu_long)p, (vu_long)p, *p);
 			errs++;
 		}
 	}
@@ -164,12 +159,13 @@ ulong __attribute__((optimize("O0")))addr_tst2(vu_long start,
 
 /*
  * Test 3 [Moving inversion, pattern of all Ones & Zeros]
+ * pattern: pattern used to write memory
  * iter: number of verification loop
  * start: Starting address of the test
  * end  : Ending address of the test
 */
 ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern,
-										vu_long start, vu_long end)
+											vu_long start, vu_long end)
 {
 	int i, test_num = 3;
 	ulong errs = 0;
@@ -180,12 +176,12 @@ ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern,
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
-		err_position = (end - start)/2;
-		while (err_position%8)
+		err_position = (end - start) / 2;
+		while (err_position % 8)
 			err_position--;
 #endif
-	p = (vu_long*)start;
-	pe = (vu_long*)end;
+	p = (vu_long *)start;
+	pe = (vu_long *)end;
 	/* Initialize memory with the initial pattern.  */
 	for (; p < pe; p++) {
 		*p = pattern;
@@ -193,16 +189,15 @@ ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern,
 			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position))	{
 				*p = ~*p;
 				if (ctrlc())
 					return -1;
 			}
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08lx\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 				test_num, 0, (vu_long)p, *p);
 		}
 #endif
@@ -211,33 +206,29 @@ ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern,
 	 * up and then from the top down.  */
 	for (i=0; i<iter; i++) 
 	{
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		for (; p < pe; p++) {
 			if (*p != pattern) {
-				printf("ERROR TEST number: %d, Faulty address: %08lx, "
-					"Expected result: %08lx, Obtained value: %08lx\n",
-					test_num, (vu_long)p, pattern, *p);
+				printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
+						(vu_long)p, pattern, *p);
 				errs++;
 			}
 			*p = ~pattern;
 			if (ctrlc())
 				return -1;
-		debug("TEST number: %d, balise: %d, "
-			"Address: %08lx, Value: %08lx\n",
+		debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 			test_num, i + 1, (vu_long)p, *p);
 		}
-		p = (vu_long*)(end-sizeof(vu_long));
-		pe = (vu_long*)start;
+		p = (vu_long *)(end - sizeof(vu_long));
+		pe = (vu_long *)start;
 
 		while (p >= pe) {
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08lx\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 				test_num, iter + 1, (vu_long)p, *p);
 			if (*p != ~pattern) {
-				printf ("ERROR TEST number: %d, Faulty address: %08lx, "
-					"Expected result: %08lx, Obtained value: %08lx\n",
-					test_num, (vu_long)p, ~pattern, *p);
+				printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
+					(vu_long)p, ~pattern, *p);
 				errs++;
 			}
 			*p = pattern;
@@ -252,11 +243,14 @@ ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern,
 /*
  * Test 4 [Moving inversion, 8bits wide pattern of all Ones & Zeros]
  * iter: number of verification loop
+ * pattern: pattern used to write memory
  * start: Starting address of the test
  * end  : Ending address of the test
 */
 ulong __attribute__((optimize("O0")))movinv_8bit(int iter,
-					unsigned char pattern, vu_long start, vu_long end)
+												 unsigned char pattern,
+												 vu_long start,
+												 vu_long end)
 {
 	int test_num = 4;
 	unsigned char *p, *pe, i;
@@ -268,10 +262,10 @@ ulong __attribute__((optimize("O0")))movinv_8bit(int iter,
 #ifdef DEBUG_ADD_ERR
 			/* error position is half way of the tested segment */
 			ulong err_position;
-			err_position = (end - start)/2;
+			err_position = (end - start) / 2;
 #endif
-	p = (unsigned char*)start;
-	pe = (unsigned char*)end;
+	p = (unsigned char *)start;
+	pe = (unsigned char *)end;
 	/* Initialize memory with the initial pattern.  */
 	for (; p < pe; p++) {
 		*p = pattern;
@@ -279,48 +273,43 @@ ulong __attribute__((optimize("O0")))movinv_8bit(int iter,
 			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
-		p = (unsigned char*)start;
-		pe = (unsigned char*)end;
+		p = (unsigned char *)start;
+		pe = (unsigned char *)end;
 		for (; p < pe; p++) {
 			if (p == (unsigned char *)(start + err_position))
 				*p = ~*p;
 			if (ctrlc())
 				return -1;
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08x\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08x\n",
 				test_num, 0, (vu_long)p, *p);
 		}
 #endif
 	/* Do moving inversions test. Check for initial pattern and then
 	 * write the complement for each memory location. Test from bottom
 	 * up and then from the top down.  */
-	for (i=0; i<iter; i++) {
-		p = (unsigned char*)start;
-		pe = (unsigned char*)end;
+	for (i = 0; i < iter; i++) {
+		p = (unsigned char *)start;
+		pe = (unsigned char *)end;
 		for (; p < pe; p++) {
 			if (*p != pattern) {
-				printf("ERROR TEST number: %d, Faulty address: %08lx, "
-					"Expected result: %08x, Obtained value: %08x\n",
-					test_num, (vu_long)p, pattern, (unsigned char)*p);
+				printf("Mem error @: %08lx, expected: %08x, found: %08x\n",
+						(vu_long)p, pattern, (unsigned char)*p);
 				errs++;
 			}
 			*p = p2;
 			if (ctrlc())
 				return -1;
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08x\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08x\n",
 				test_num, i + 1, (vu_long)p, *p);
 		}
-		p = (unsigned char*)(end-sizeof(unsigned char));
-		pe = (unsigned char*)start;
+		p = (unsigned char *)(end-sizeof(unsigned char));
+		pe = (unsigned char *)start;
 		while (p >= pe) {
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08x\n"
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08x\n"
 			, test_num, iter + 1, (vu_long)p, *p);
 			if (*p != p2) {
-				printf("ERROR TEST number: %d, Faulty address: %08lx, "
-					"Expected result: %08x, Obtained value: %08x\n",
-					test_num, (vu_long)p, p2, (unsigned char)*p);
+				printf("Mem error @: %08lx, expected: %08x, found: %08x\n",
+						(vu_long)p, p2, (unsigned char)*p);
 				errs++;
 			}
 			*p = pattern;
@@ -338,8 +327,8 @@ ulong __attribute__((optimize("O0")))movinv_8bit(int iter,
  * start: Starting address of the test
  * end  : Ending address of the test
 */
-ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start
-											, vu_long end)
+ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start,
+											 vu_long end)
 {
 	int i;
 	int test_num = 5;
@@ -358,8 +347,8 @@ ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start
 	reset_seed();
 	p1 = rand1(iter);
 	/* Initialise tested memory range */
-	p = (vu_long*)start;
-	pe = (vu_long*)end;
+	p = (vu_long *)start;
+	pe = (vu_long *)end;
 	/* Initialize memory with the initial pattern */
 	for (; p < pe; p++) {
 		*p = p1;
@@ -367,14 +356,13 @@ ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start
 			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position)) {
 				*p = ~*p;
 			}
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08lx\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 				test_num, 0, (vu_long)p, *p);
 		}
 #endif
@@ -382,38 +370,34 @@ ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start
 	/* Do moving inversions test. Check for initial pattern and then
 	 * write the complement for each memory location. Test from bottom
 	 * up and then from the top down.  */
-	for (i=0; i<iter; i++) {
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+	for (i=0; i < iter; i++) {
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		for (; p < pe; p++) {
 			if (*p != p1) {
-				printf("ERROR TEST number: %d, Faulty address: %08lx, "
-					"Expected result: %08lx, Obtained value: %08lx\n",
-					test_num, (vu_long)p, p1, *p);
+				printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
+						(vu_long)p, p1, *p);
 				errs++;
 			}
 			*p = ~p1;
 			if (ctrlc())
 			return -1;
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08lx\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 				test_num, i + 1, (vu_long)p, *p);
 		}
-		pe = (vu_long*)start;
-		p = (vu_long*)(end-sizeof(vu_long));
+		pe = (vu_long *)start;
+		p = (vu_long *)(end-sizeof(vu_long));
 		while (p >= pe) {
 			if (*p != ~p1) {
-				printf("ERROR TEST number: %d, Faulty address: %08lx, "
-					"Expected result: %08lx, Obtained value: %08lx\n",
-					test_num, (vu_long)p, ~p1, *p);
+				printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
+						(vu_long)p, ~p1, *p);
 				errs++;
 			}
 			*p = p1;
 			p--;
 			if (ctrlc())
 				return -1;
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08lx\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 				test_num, iter + i + 1, (vu_long)p, *p);
 		}
 	}
@@ -426,7 +410,7 @@ ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start
  * end  : Ending address of the test
 */
 ulong __attribute__((optimize("O0")))move_block(vu_long start,
-										vu_long end)
+												vu_long end)
 {
 	vu_long length, mask = 0x80000000, i;
 	ulong errs = 0;
@@ -454,26 +438,25 @@ ulong __attribute__((optimize("O0")))move_block(vu_long start,
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
-		err_position = (end - start)/4;
-		while (err_position%8)
+		err_position = (end - start) / 4;
+		while (err_position % 8)
 			err_position--;
 #endif
 	/* length adjustement */
 	length = end - start;/* length should be at least 2 blocks of 64 Bytes */
 	if (length < 128) {
-		printf("Tested range is too small "
-			"- it should be 128 Bytes at least\n");
+		printf("Tested range should be 128 Bytes at least\n");
 		return(errs);
 	}
 	/* Write each address with it's own address */
 	for (i = start; i < end; i += 64) {
-		memcpy((void*) i, (void*)tab, 64);
-		for (j=0; j<16; j++) {
+		memcpy((void *) i, (void *)tab, 64);
+		for (j = 0; j < 16; j++) {
 			/* rotate left with carry */
 			if ((tab[j] & mask) == mask)
-				tab[j]=(tab[j]<<1) + 1;
+				tab[j] = (tab[j] << 1) + 1;
 			else
-				tab[j] = tab[j]<<1;
+				tab[j] = tab[j] << 1;
 		}
 		if (ctrlc())
 			return -1;
@@ -484,37 +467,34 @@ ulong __attribute__((optimize("O0")))move_block(vu_long start,
 	 * - the first half is right shifted 32-bytes (with wrapping)
 	*/
 	/* Move first half to second half*/
-	memcpy((void*) (start + length/2), (void*) start, length/2);
+	memcpy((void *) (start + length/2), (void *) start, length / 2);
 	/* Move the second half, less the last 32-bytes.
 	 * To the first half, offset plus 32-bytes*/
-	memcpy((void*) (start + 32), (void*) (start + length/2), length/2 - 32);
+	memcpy((void *) (start + 32), (void *) (start + length / 2),
+			length / 2 - 32);
 	/* Move last 8 DWORDS (32-bytes) of the second half to
 	 * the start of the first half */
-	memcpy((void*) (start), (void*) (end - 32), 32);
+	memcpy((void *) (start), (void *) (end - 32), 32);
 #ifdef DEBUG_ADD_ERR
 	for (i = start; i < end; i += 4) {
-		p1 =(uint*)i;
-		if ((p1 == (uint*)(start + err_position))) {
+		p1 =(uint *)i;
+		if ((p1 == (uint *)(start + err_position))) {
 			*p1 = 0;
 		}
-		debug("TEST number: %d, balise: %d, "
-			"Address: %08lx, Value: %08x\n",
+		debug("TN: %d, B: %d, Addr: %08lx, Value: %08x\n",
 			test_num, 0, (vu_long)p1, *p1);
 	}
 #endif
 	for (i = start; i < end; i += 8) {
 		p1 = (uint *)i;
-		p2 = (uint*)(i + 4);
-		debug("TEST number: %d, balise: %d, "
-			"Address: %08lx, Value: %08x\n",
+		p2 = (uint *)(i + 4);
+		debug("TN: %d, B: %d, Addr: %08lx, Value: %08x\n",
 			test_num, 1, (vu_long)p1, *p1);
-		debug("TEST number: %d, balise: %d, "
-			"Address: %08lx, Value: %08x\n",
+		debug("TN: %d, B: %d, Addr: %08lx, Value: %08x\n",
 			test_num, 2, (vu_long)p2, *p2);
-		if (*p1!=*p2) {
-			printf("ERROR TEST number: %d, Faulty address: %08lx, "
-				"Expected result: %08x, Obtained value: %08x\n",
-				test_num, (vu_long)p1, *p1, *p2);
+		if (*p1 != *p2) {
+			printf("Mem error @: %08lx, expected: %08x, found: %08x\n",
+					(vu_long)p1, *p1, *p2);
 			errs++;
 		}
 		if (ctrlc())
@@ -530,8 +510,8 @@ ulong __attribute__((optimize("O0")))move_block(vu_long start,
  * start: Starting address of the test
  * end  : Ending address of the test
 */
-ulong __attribute__((optimize("O0")))movinv64(vu_long pattern, vu_long start
-											 , vu_long end)
+ulong __attribute__((optimize("O0")))movinv64(vu_long pattern, vu_long start,
+											  vu_long end)
 {
 	int k=0;
 	vu_long *p, *pe, pat, comp_pat;
@@ -545,14 +525,13 @@ ulong __attribute__((optimize("O0")))movinv64(vu_long pattern, vu_long start
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
-		err_position = (end - start)/2;
-		while (err_position%8){
+		err_position = (end - start) / 2;
+		while (err_position % 8)
 			err_position--;
-		}
 #endif
 	/* Initialise tested memory range */
-	p = (vu_long*)start;
-	pe = (vu_long*)end;
+	p = (vu_long *)start;
+	pe = (vu_long *)end;
 	/* Initialize memory with the initial pattern.  */
 	k = 0;
 	pat = pattern;
@@ -574,34 +553,31 @@ ulong __attribute__((optimize("O0")))movinv64(vu_long pattern, vu_long start
 			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position))
 				*p = ~*p;
-			debug("TEST number: %d, balise: %d, "
-				"Address: %08lx, Value: %08lx\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 				test_num, 0, (vu_long)p, *p);
 		}
 #endif
 	/* Do moving inversions test. Check for initial pattern and then
 	 * write the complement for each memory location. Test from bottom
 	 * up and then from the top down.  */
-	p = (vu_long*)start;
-	pe = (vu_long*)end;
+	p = (vu_long *)start;
+	pe = (vu_long *)end;
 	k = 0;
 	while (1) {
 		pat = tab[k];
 		if (*p != pat) {
-			printf ("ERROR TEST number: %d, Faulty address: %08lx, "
-				"Expected result: %08lx, Obtained value: %08lx\n",
-				test_num, (vu_long)p, pat, *p);
+			printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
+					(vu_long)p, pat, *p);
 			errs++;
 		}
 		comp_pat = ~pat;
 		*p = comp_pat;
-		debug("TEST number: %d, balise: %d, "
-			"Address: %08lx, Value: %08lx\n",
+		debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 			test_num, 1, (vu_long)p, *p);
 		p++;
 		if (ctrlc())
@@ -611,20 +587,18 @@ ulong __attribute__((optimize("O0")))movinv64(vu_long pattern, vu_long start
 		if (++k >= 64)
 			k = 0;
 	}
-	pe = (vu_long*)start;
-	p = (vu_long*)(end-sizeof(vu_long));
+	pe = (vu_long *)start;
+	p = (vu_long *)(end-sizeof(vu_long));
 	while (1) {
 		pat = tab[k];
 		comp_pat = ~pat;
 		if (*p != comp_pat) {
-			printf("ERROR TEST number: %d, Faulty address: %08lx, "
-				"Expected result: %08lx, Obtained value: %08lx\n",
-				test_num + 1, (vu_long)p, comp_pat, *p);
+			printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
+					(vu_long)p, comp_pat, *p);
 			errs++;
 		}
 		*p = pat;
-		debug("TEST number: %d, balise: %d, "
-			"Address: %08lx, Value: %08lx\n",
+		debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 			test_num, 2, (vu_long)p, *p);
 		if (p <= pe)
 			break;
@@ -638,11 +612,11 @@ ulong __attribute__((optimize("O0")))movinv64(vu_long pattern, vu_long start
 /*
  * Test 8 [Half moving inversion, random sequence pattern]
  * iter: random sequence modifier, use mtest itération parameter
- * start: Starting address of the test
- * end  : Ending address of the test
+ * start: Starting Addr of the test
+ * end  : Ending Addr of the test
  */
-ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand
-											 , vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand,
+											  vu_long start, vu_long end)
 {
 	int i;
 	vu_long *p, *pe, num;
@@ -654,14 +628,14 @@ ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
-		err_position = (end - start)/2;
-		while (err_position%8)
+		err_position = (end - start) / 2;
+		while (err_position % 8)
 			err_position--;
 #endif
 	reset_seed();
 	/* Initialise tested memory range */
-	p = (vu_long*)start;
-	pe = (vu_long*)end;
+	p = (vu_long *)start;
+	pe = (vu_long *)end;
 	
 	for (; p < pe; p++) {
 		*p = rand1(iter_rand);
@@ -669,38 +643,37 @@ ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand
 			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position))
 				*p = ~*p;
 			if (ctrlc())
 				return -1;
-			debug("TEST number: %d, balise: %d, Address: %08lx, "
-			"Value: %08lx\n", test_num, 0, (vu_long)p, *p);
+			debug("TN: %d, B: %d, Value: %08lx\n", test_num, 0,
+					(vu_long)p, *p);
 		}
 #endif
 	/* Do moving inversions test. Check for initial pattern and then
 	 * write the complement for each memory location. */
 	for (i=0; i<2; i++) {
 		reset_seed();
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		for (; p < pe; p++) {
 			num = rand1(iter_rand);
 			if (i)
 				num = ~num;
 			if (*p != num) {
-				printf("ERROR TEST number: %d, Faulty address: %08lx, "
-					"Expected result: %08lx, Obtained value: %08lx\n",
-					test_num, (vu_long)p, num, *p);
+				printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
+						(vu_long)p, num, *p);
 				errs++;
 			}
 			*p = ~num;
 			if (ctrlc())
 				return -1;
-			debug("TEST number: %d, balise: %d, Address: %08lx, "
-				"Value: %08lx\n", test_num, i + 1, (vu_long)p, *p);
+			debug("TN: %d, B: %d, Value: %08lx\n",
+					test_num, i + 1, (vu_long)p, *p);
 		}
 	}
 	return errs;
@@ -709,12 +682,14 @@ ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand
 /*
  * Test 9 [modulo 20, random pattern]
  * iter: Number of writing iteration between 2 modulo 20 patterns
+ * p1: pattern used to write memory each 20 address 
+ * p2: pattern used to write the rest of memory
  * start: Starting address of the test
  * end  : Ending address of the test
 */
-ulong __attribute__((optimize("O0")))modtst(int offset, int iter
-										   , vu_long p1, vu_long p2
-										   , vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))modtst(int offset, int iter,
+											vu_long p1, vu_long p2,
+											vu_long start, vu_long end)
 {
 	int k, i;
 	int test_num = 9; 
@@ -730,22 +705,22 @@ ulong __attribute__((optimize("O0")))modtst(int offset, int iter
 		err_position = start + offset * 8 + MOD_SZ * 8 ;
 #endif
 	/* Initialise tested memory range */
-	p = (vu_long*) start + offset;
-	pe = (vu_long*)(end-MOD_SZ);/* adjust the ending address */
+	p = (vu_long *) start + offset;
+	pe = (vu_long *)(end - MOD_SZ);/* adjust the ending address */
 	for (; p < pe; p += MOD_SZ) {
 		*p = p1;
 		if (ctrlc())
 			return -1;
 #ifdef DEBUG_ADD_ERR
-		if (p == (vu_long*)err_position)
+		if (p == (vu_long *)err_position)
 			*p = ~p1;
 #endif
 	}
 	/* Write the rest of memory "iter" times with the pattern complement */
-	for (i=0; i<iter; i++) 
+	for (i=0; i < iter; i++) 
 	{
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		k = 0;
 		for (; p < pe; p++) {
 			if (k != offset)
@@ -756,23 +731,20 @@ ulong __attribute__((optimize("O0")))modtst(int offset, int iter
 				return -1;
 		}
 #ifdef DEBUG_ADD_ERR
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		for (; p < pe; p++) {
-			debug("TEST number: %d, balise: %d, Address: %08lx, "
-			"Value: %08lx\n", test_num, i, (vu_long)p, *p);
+			debug("TN: %d, B: %d, Value: %08lx\n", test_num, i, (vu_long)p, *p);
 		}
 #endif
 	}
-	p = (vu_long*)start + offset;
-	pe = (vu_long*)(end - MOD_SZ);
+	p = (vu_long *)start + offset;
+	pe = (vu_long *)(end - MOD_SZ);
 	for (; p < pe; p += MOD_SZ) {
-		debug("TEST number: %d, balise: %d, Address: %08lx, "
-			"Value: %08lx\n", test_num, iter, (vu_long)p, *p);
+		debug("TN: %d, B: %d, Value: %08lx\n", test_num, iter, (vu_long)p, *p);
 		if (*p != p1) {
-			printf("ERROR TEST number: %d, Faulty address: %08lx, "
-				"Expected result: %08lx, Obtained value: %08lx\n",
-				test_num, (vu_long)p, p1, *p);
+			printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
+					(vu_long)p, p1, *p);
 			errs++;
 		}
 		if (ctrlc())
@@ -783,12 +755,13 @@ ulong __attribute__((optimize("O0")))modtst(int offset, int iter
 
 /*
  * Test 10(0xA) part fill - [bit fade, 64bits pattern]
+ * pattern: pattern used to write memory
  * start: Starting address of the test
  * end  : Ending address of the test
 */
-ulong __attribute__((optimize("O0")))bit_fade_fill(vu_long pattern
-												  , vu_long start
-												  , vu_long end)
+ulong __attribute__((optimize("O0")))bit_fade_fill(vu_long pattern,
+												   vu_long start,
+												   vu_long end)
 {
 	vu_long *p, *pe;
 	ulong errs = 0;
@@ -798,13 +771,13 @@ ulong __attribute__((optimize("O0")))bit_fade_fill(vu_long pattern
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
-		err_position = (end - start)/2;
-		while (err_position%8)
+		err_position = (end - start) / 2;
+		while (err_position % 8)
 			err_position--;
 #endif
 	/* Initialise tested memory range */
-	p = (vu_long*)start;
-	pe = (vu_long*)end;
+	p = (vu_long *)start;
+	pe = (vu_long *)end;
 	
 	/* Initialize memory with the initial pattern. */
 	for (;p < pe ;p++) {
@@ -813,16 +786,15 @@ ulong __attribute__((optimize("O0")))bit_fade_fill(vu_long pattern
 			return -1;
 	}
 #ifdef DEBUG_ADD_ERR
-		p = (vu_long*)start;
-		pe = (vu_long*)end;
+		p = (vu_long *)start;
+		pe = (vu_long *)end;
 		for (; p < pe; p++) 
 		{
 			if (p == (vu_long *)(start + err_position))
 				*p = ~*p;
 			if (ctrlc())
 				return -1;
-			debug("TEST number: %d, balise: %d, Address: %08lx, "
-				"Value: %08lx\n", 10, 0, (vu_long)p, *p);
+			debug("TN: %d, B: %d, Value: %08lx\n", 10, 0, (vu_long)p, *p);
 		}
 #endif
 	return errs;
@@ -830,15 +802,16 @@ ulong __attribute__((optimize("O0")))bit_fade_fill(vu_long pattern
 
 /*
  * Test 10(0xA) fade part - [bit fade, 64bits pattern]
+ * pattern: pattern used to write memory
  * start: Starting address of the test
  * end  : Ending address of the test
 */
-ulong __attribute__((optimize("O0")))bit_fade_chk(vu_long pattern
-										, vu_long start, vu_long end)
+ulong __attribute__((optimize("O0")))bit_fade_chk(vu_long pattern,
+												  vu_long start,
+												  vu_long end)
 {
 	vu_long *p, *pe;
 	ulong errs = 0;
-	int test_num = 10;
 	/* Function should be used with multiple of 8 bytes length*/
 	if (verify_length(start, end, sizeof(*p)))
 		return errs;
@@ -846,11 +819,10 @@ ulong __attribute__((optimize("O0")))bit_fade_chk(vu_long pattern
 	p = (vu_long *)start;
 	pe = (vu_long *)end;
 	/* Make sure that nothing changed while sleeping */
-	for (;p < pe ;p++) {
+	for (; p < pe; p++) {
 		if (*p != pattern) {
-			printf("ERROR TEST number: %d, Faulty address: %08lx, "
-			"Expected result: %08lx, Obtained value: %08lx\n"
-			, test_num, (vu_long)p, pattern, *p);
+			printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
+					(vu_long)p, pattern, *p);
 			errs++;
 		}
 		if (ctrlc())
