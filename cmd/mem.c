@@ -586,7 +586,8 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr
 	}
 	end = (vu_long)buf + length;
 	start = (vu_long)buf;
-	printf("Testing memory area from %08lx to %08lx:\n", start, end);
+	printf("Testing memory area from %08lx to %08lx: - iter: %lu\n",
+		   start, end, iterations);
 
 /* Disable and flush cache */
 #ifdef CONFIG_CMD_CACHE
@@ -657,7 +658,7 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr
 	if (errs < 0)
 		return -1UL;
 
-	errs += wait(2000);
+	errs += wait(20);
 	if (errs < 0)
 		return -1UL;
 
@@ -670,7 +671,7 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr
 	if (errs < 0)
 		return -1UL;
 
-	errs += wait(2000);
+	errs += wait(20);
 	if (errs < 0)
 		return -1UL;
 
@@ -679,6 +680,7 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr
 	if (errs < 0)
 		return -1UL;
 
+	printf("\n");
 /* Enable cache */
 #ifdef CONFIG_CMD_CACHE
 	icache_enable();

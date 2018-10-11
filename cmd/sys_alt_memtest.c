@@ -83,7 +83,7 @@ ulong __attribute__((optimize("O0")))addr_tst1(vu_long start, vu_long end)
 			if (ctrlc())
 				return -1;
 #ifdef DEBUG_ADD_ERR
-			if (p == (unsigned char *)(start + err_position) && i == 0) 
+			if (p == (unsigned char *)(start + err_position) && i == 0)
 				*p = ~*p;
 			debug("TN: %d, B: %d, Addr: %08lx, Value: %08x\n",
 				test_num, 0, (vu_long)p, *p);
@@ -370,7 +370,7 @@ ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start,
 	/* Do moving inversions test. Check for initial pattern and then
 	 * write the complement for each memory location. Test from bottom
 	 * up and then from the top down.  */
-	for (i=0; i < iter; i++) {
+	for (i = 0; i < iter; i++) {
 		p = (vu_long *)start;
 		pe = (vu_long *)end;
 		for (; p < pe; p++) {
@@ -462,7 +462,7 @@ ulong __attribute__((optimize("O0")))move_block(vu_long start,
 			return -1;
 	}
 	/*
-	 * At the end of all this 
+	 * At the end of all this
 	 * - the second half equals the inital value of the first half
 	 * - the first half is right shifted 32-bytes (with wrapping)
 	*/
@@ -477,7 +477,7 @@ ulong __attribute__((optimize("O0")))move_block(vu_long start,
 	memcpy((void *) (start), (void *) (end - 32), 32);
 #ifdef DEBUG_ADD_ERR
 	for (i = start; i < end; i += 4) {
-		p1 =(uint *)i;
+		p1 = (uint *)i;
 		if ((p1 == (uint *)(start + err_position))) {
 			*p1 = 0;
 		}
@@ -650,7 +650,7 @@ ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand,
 				*p = ~*p;
 			if (ctrlc())
 				return -1;
-			debug("TN: %d, B: %d, Value: %08lx\n", test_num, 0,
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n", test_num, 0,
 					(vu_long)p, *p);
 		}
 #endif
@@ -672,7 +672,7 @@ ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand,
 			*p = ~num;
 			if (ctrlc())
 				return -1;
-			debug("TN: %d, B: %d, Value: %08lx\n",
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n",
 					test_num, i + 1, (vu_long)p, *p);
 		}
 	}
@@ -682,7 +682,7 @@ ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand,
 /*
  * Test 9 [modulo 20, random pattern]
  * iter: Number of writing iteration between 2 modulo 20 patterns
- * p1: pattern used to write memory each 20 address 
+ * p1: pattern used to write memory each 20 address
  * p2: pattern used to write the rest of memory
  * start: Starting address of the test
  * end  : Ending address of the test
@@ -717,8 +717,7 @@ ulong __attribute__((optimize("O0")))modtst(int offset, int iter,
 #endif
 	}
 	/* Write the rest of memory "iter" times with the pattern complement */
-	for (i=0; i < iter; i++) 
-	{
+	for (i = 0; i < iter; i++) {
 		p = (vu_long *)start;
 		pe = (vu_long *)end;
 		k = 0;
@@ -729,19 +728,19 @@ ulong __attribute__((optimize("O0")))modtst(int offset, int iter,
 				k = 0;
 			if (ctrlc())
 				return -1;
-		}
+	}
 #ifdef DEBUG_ADD_ERR
 		p = (vu_long *)start;
 		pe = (vu_long *)end;
 		for (; p < pe; p++) {
-			debug("TN: %d, B: %d, Value: %08lx\n", test_num, i, (vu_long)p, *p);
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n", test_num, i, (vu_long)p, *p);
 		}
 #endif
 	}
 	p = (vu_long *)start + offset;
 	pe = (vu_long *)(end - MOD_SZ);
 	for (; p < pe; p += MOD_SZ) {
-		debug("TN: %d, B: %d, Value: %08lx\n", test_num, iter, (vu_long)p, *p);
+		debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n", test_num, iter, (vu_long)p, *p);
 		if (*p != p1) {
 			printf("Mem error @: %08lx, expected: %08lx, found: %08lx\n",
 					(vu_long)p, p1, *p);
@@ -788,13 +787,12 @@ ulong __attribute__((optimize("O0")))bit_fade_fill(vu_long pattern,
 #ifdef DEBUG_ADD_ERR
 		p = (vu_long *)start;
 		pe = (vu_long *)end;
-		for (; p < pe; p++) 
-		{
+		for (; p < pe; p++) {
 			if (p == (vu_long *)(start + err_position))
 				*p = ~*p;
 			if (ctrlc())
 				return -1;
-			debug("TN: %d, B: %d, Value: %08lx\n", 10, 0, (vu_long)p, *p);
+			debug("TN: %d, B: %d, Addr: %08lx, Value: %08lx\n", 10, 0, (vu_long)p, *p);
 		}
 #endif
 	return errs;

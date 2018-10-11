@@ -34,8 +34,8 @@ ulong movinvr(int iter, vu_long start, vu_long end);
 ulong move_block(vu_long start, vu_long end);
 ulong movinv64(vu_long pattern, vu_long start, vu_long end);
 ulong rand_seq(unsigned char iter_rand, vu_long start, vu_long end);
-ulong modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start
-			, vu_long end);
+ulong modtst(int offset, int iter, vu_long p1, vu_long p2, vu_long start,
+			 vu_long end);
 ulong bit_fade_fill(vu_long pattern, vu_long start, vu_long end);
 ulong bit_fade_chk(vu_long pattern, vu_long start, vu_long end);
 ulong wait(unsigned int sec);
