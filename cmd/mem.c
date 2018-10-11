@@ -9,7 +9,6 @@
  *
  * Copied from FADS ROM, Dan Malek (dmalek@jlc.net)
  */
-
 #include <common.h>
 #include <console.h>
 #include <bootretry.h>
@@ -571,10 +570,9 @@ static int do_mem_loopw(cmd_tbl_t *cmdtp, int flag, int argc,
 }
 #endif /* CONFIG_LOOPW */
 
-
 #ifdef CONFIG_CMD_MEMTEST
-static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr, ulong end_addr,
-			  ulong iterations)
+static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr
+						, ulong end_addr, ulong iterations)
 {
 	static ulong errs;
 	ulong length;
@@ -588,7 +586,7 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr, ulong 
 	}
 	end = (vu_long)buf + length;
 	start = (vu_long)buf;
-	printf("Testing memory area from %08lx to %08lx:\n"	, start, end);
+	printf("Testing memory area from %08lx to %08lx:\n", start, end);
 
 /* Disable and flush cache */
 #ifdef CONFIG_CMD_CACHE
@@ -597,72 +595,63 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr, ulong 
 	dcache_disable();
 #endif
 	/* Start testing memory */
-	printf("addr_tst1 start = %08lx, end = %08lx, number of iteration = %0lu\n"
-	, start_addr, end_addr, iterations);
+	printf("addr_tst1\n");
 	errs = addr_tst1(start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
 
-	printf("addr_tst2: start = %08lx, end = %08lx, number of iteration = %lu\n"
-	, start_addr, end_addr, iterations);
+	printf("addr_tst2\n");
 	errs += addr_tst2(start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
 
-	printf("movinv: start = %08lx, end = %08lx, number of iteration = %lu\n"
-	, start_addr, end_addr, iterations);
-	errs += movinv (MEMTEST_ITERATION, pattern1, start, end);
+	printf("movinv: start\n");
+	errs += movinv(MEMTEST_ITERATION, pattern1, start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
 
-	printf("movinv_8bit: start = %08lx, end = %08lx, number of iteration = %lu\n"
-	, start_addr, end_addr, iterations);
-	errs += movinv_8bit (MEMTEST_ITERATION,  (unsigned char)pattern1, start, end);
+	printf("movinv_8bit\n");
+	errs += movinv_8bit(MEMTEST_ITERATION, (unsigned char)pattern1, start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
 
-	printf("movinvr: start = %08lx, end = %08lx, number of iteration = %lu\n"
-	, start_addr, end_addr, iterations);
-	errs += movinvr (MEMTEST_ITERATION, start, end);
+	printf("movinvr: start\n");
+	errs += movinvr(MEMTEST_ITERATION, start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
 
-	printf("move_block start = %08lx, end = %08lx, number of iteration = %lu\n"
-	, start_addr, end_addr, iterations);
+	printf("move_block\n");
 	errs += move_block(start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
 
-	printf("movinv64: start = %08lx, end = %08lx, number of iteration = %lu\n"
-	, start_addr, end_addr, iterations);
+	printf("movinv64\n");
 	errs += movinv64(pattern1, start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
 
-	printf("rand_seq: start = %08lx, end = %08lx, number of iteration = %lu\n"
-	, start_addr, end_addr, iterations);
+	printf("rand_seq\n");
 	errs += rand_seq(iterations, start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
 
-	printf("modtst: start = %08lx, end = %08lx, number of iteration = %lu\n"
-	, start_addr, end_addr, iterations);
-	errs += modtst(MEMTEST_MOD_OFFSET, MEMTEST_ITERATION, pattern1, ~pattern1, start, end);
+	printf("modtst\n");
+	errs += modtst(MEMTEST_MOD_OFFSET, MEMTEST_ITERATION, pattern1, ~pattern1
+				, start, end);
 	WATCHDOG_RESET();
 	if (errs < 0)
 		return -1UL;
 
-	printf("bit_fade: start = %08lx, end = %08lx, number of iteration = %lu\n"
-	, start_addr, end_addr, iterations);
-	errs+=bit_fade_fill(pattern1, start, end);
+	printf("bit_fade\n");
+	errs +=bit_fade_fill(pattern1, start, end);
 	if (errs < 0)
 		return -1UL;
 
@@ -675,7 +664,7 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr, ulong 
 	if (errs < 0)
 		return -1UL;
 
-	errs+=bit_fade_fill(~pattern1, start, end);
+	errs +=bit_fade_fill(~pattern1, start, end);
 	if (errs < 0)
 		return -1UL;
 
@@ -846,8 +835,8 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 		putc('\n');
 		ret = 1;
 	} else {
-		printf("Tested %d iteration(s) with %lu errors.\n",
-			iteration, errs);
+		printf("Tested %d iteration(s) with %lu errors.\n"
+			  , iteration, errs);
 		ret = errs != 0;
 	}
 
