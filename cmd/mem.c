@@ -576,14 +576,19 @@ static int do_mem_loopw(cmd_tbl_t *cmdtp, int flag, int argc,
 static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr, ulong end_addr,
 			  ulong iterations)
 {
-	static ulong errs = 0;
+	static ulong errs;
 	ulong length;
 	vu_long start, end;
 
 	length = end_addr - start_addr;
+	/* verify memory length */
+	if (!length) {
+		printf("Refusing to do empty test\n");
+		return -1;
+	}
 	end = (vu_long)buf + length;
 	start = (vu_long)buf;
-	printf("Testing memory area from %08lx to %08lx:\n", start, end);
+	printf("Testing memory area from %08lx to %08lx:\n"	, start, end);
 
 /* Disable and flush cache */
 #ifdef CONFIG_CMD_CACHE
@@ -591,7 +596,7 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr, ulong 
 	flush_dcache_all();
 	dcache_disable();
 #endif
-
+	/* Start testing memory */
 	printf("addr_tst1 start = %08lx, end = %08lx, number of iteration = %0lu\n"
 	, start_addr, end_addr, iterations);
 	errs = addr_tst1(start, end);
