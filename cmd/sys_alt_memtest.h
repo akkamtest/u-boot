@@ -23,7 +23,6 @@
 #define MEMTEST_PATTERN_MB_14	0xfffffffe
 #define MEMTEST_PATTERN_MB_15	0xfffffffe
 
-unsigned char verify_length(vu_long start, vu_long end, uint size_of_pt);
 unsigned long long int rand1(ulong salt);
 void reset_seed(void);
 ulong addr_tst1(vu_long start, vu_long end);

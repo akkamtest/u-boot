@@ -12,17 +12,6 @@ static unsigned long long int SEED_B;
 static unsigned long long int SEED_C;
 static unsigned long long int SEED_D;
 
-unsigned char verify_length(vu_long start, vu_long end, uint size_of_pt)
-{
-	vu_long length;
-	length = end - start;
-	if (length % size_of_pt) {
-		printf("Tested range is not a multiple of %d Byte(s) - Aborted\n",
-			size_of_pt);
-		return 1;
-	}
-	return 0;
-}
 
 unsigned long long int rand1(ulong salt)
 {
@@ -60,10 +49,6 @@ ulong __attribute__((optimize("O0")))addr_tst1(vu_long start, vu_long end)
 	unsigned char i, mask, *p, *pe;
 	ulong errs = 0;
 	int test_num = 1;
-	/* Function should be used with multiple of 8bits length*/
-	if (verify_length(start, end, sizeof(*p)))
-		return errs;
-
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		uint err_position;
@@ -108,9 +93,6 @@ ulong __attribute__((optimize("O0")))addr_tst2(vu_long start,
 {
 	vu_long *p, *pe;
 	ulong errs = 0;
-	/* Function should be used with multiple of 8 bytes length*/
-	if (verify_length(start, end, sizeof(*p)))
-		return errs;
 #ifdef DEBUG_ADD_ERR
 			/* error position is half way of the tested segment */
 			ulong err_position;
@@ -170,9 +152,6 @@ ulong __attribute__((optimize("O0")))movinv(int iter, vu_long pattern,
 	int i, test_num = 3;
 	ulong errs = 0;
 	vu_long *p, *pe;
-	/* Function should be used with multiple of 8 bytes length*/
-	if (verify_length(start, end, sizeof(*p)))
-		return errs;
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
@@ -256,9 +235,6 @@ ulong __attribute__((optimize("O0")))movinv_8bit(int iter,
 	unsigned char *p, *pe, i;
 	unsigned char p2 = ~pattern;
 	ulong errs = 0;
-	/* Function should be used with multiple of 8 bits length*/
-	if (verify_length(start, end, sizeof(*p)))
-		return errs;
 #ifdef DEBUG_ADD_ERR
 			/* error position is half way of the tested segment */
 			ulong err_position;
@@ -334,9 +310,6 @@ ulong __attribute__((optimize("O0")))movinvr(int iter, vu_long start,
 	int test_num = 5;
 	vu_long *p, *pe, p1;
 	ulong errs = 0;
-	/* Function should be used with multiple of 8 bytes length*/
-	if (verify_length(start, end, sizeof(*p)))
-		return errs;
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
@@ -432,9 +405,6 @@ ulong __attribute__((optimize("O0")))move_block(vu_long start,
 					MEMTEST_PATTERN_MB_15};
 	uint j,test_num = 6;
 	uint *p1, *p2;
-	/* length should be a multiple of 2 blocks of 64 Bytes */
-	if (verify_length(start, end, 2 * sizeof(tab)))
-		return(errs);
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
@@ -444,10 +414,6 @@ ulong __attribute__((optimize("O0")))move_block(vu_long start,
 #endif
 	/* length adjustement */
 	length = end - start;/* length should be at least 2 blocks of 64 Bytes */
-	if (length < 128) {
-		printf("Tested range should be 128 Bytes at least\n");
-		return(errs);
-	}
 	/* Write each address with it's own address */
 	for (i = start; i < end; i += 64) {
 		memcpy((void *) i, (void *)tab, 64);
@@ -519,9 +485,6 @@ ulong __attribute__((optimize("O0")))movinv64(vu_long pattern, vu_long start,
 	vu_long tab[64];
 	unsigned char tab_compl = 0;
 	ulong errs = 0;
-	/* Function should be used with multiple of 8 bytes length*/
-	if (verify_length(start, end, sizeof(*p)))
-		return errs;
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
@@ -622,9 +585,6 @@ ulong __attribute__((optimize("O0")))rand_seq(unsigned char iter_rand,
 	vu_long *p, *pe, num;
 	int test_num = 8;
 	ulong errs = 0;
-	/* Function should be used with multiple of 8 bytes length*/
-	if (verify_length(start, end, sizeof(*p)))
-		return(errs);
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
@@ -696,9 +656,6 @@ ulong __attribute__((optimize("O0")))modtst(int offset, int iter,
 	vu_long *p;
 	vu_long *pe;
 	ulong errs = 0;
-	/* Function should be used with multiple of 8 bytes length*/
-	if (verify_length(start, end, sizeof(*p)))
-		return errs;
 #ifdef DEBUG_ADD_ERR
 		/* error position is at the second modulo */
 		ulong err_position;
@@ -764,9 +721,6 @@ ulong __attribute__((optimize("O0")))bit_fade_fill(vu_long pattern,
 {
 	vu_long *p, *pe;
 	ulong errs = 0;
-	/* Function should be used with multiple of 8 bytes length*/
-	if (verify_length(start, end, sizeof(*p)))
-		return errs;
 #ifdef DEBUG_ADD_ERR
 		/* error position is half way of the tested segment */
 		ulong err_position;
@@ -810,9 +764,6 @@ ulong __attribute__((optimize("O0")))bit_fade_chk(vu_long pattern,
 {
 	vu_long *p, *pe;
 	ulong errs = 0;
-	/* Function should be used with multiple of 8 bytes length*/
-	if (verify_length(start, end, sizeof(*p)))
-		return errs;
 	/* Initialise tested memory range */
 	p = (vu_long *)start;
 	pe = (vu_long *)end;

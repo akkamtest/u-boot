@@ -584,12 +584,17 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr
 		printf("Refusing to do empty test\n");
 		return -1;
 	}
+	if (length % 128) {
+		printf("Tested range must be a multiple of 128 Bytes\n");
+		return -1;
+	}
+	
 	end = (vu_long)buf + length;
 	start = (vu_long)buf;
 	printf("Testing memory area from %08lx to %08lx: - iter: %lu\n",
 		   start, end, iterations);
 
-/* Disable and flush cache */
+	/* Disable and flush cache */
 #ifdef CONFIG_CMD_CACHE
 	icache_disable();
 	flush_dcache_all();
@@ -686,7 +691,7 @@ static ulong mem_test_alt(vu_long *buf, ulong pattern1, ulong start_addr
 	icache_enable();
 	dcache_enable();
 #endif
-	printf("%lu errors found\n",errs);
+	printf("%lu error(s) found\n",errs);
 	return errs;
 }
 
@@ -791,7 +796,7 @@ static int do_mem_mtest(cmd_tbl_t *cmdtp, int flag, int argc,
 			return CMD_RET_USAGE;
 
 	if (end < start) {
-		printf("Refusing to do empty test\n");
+		printf("Refusing to test negative memory area\n");
 		return -1;
 	}
 
